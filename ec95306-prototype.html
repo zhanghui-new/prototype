@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>95306 发送 / 到达 / 股道现车原型</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+SC:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #132033;
+      --muted: #5a6b7d;
+      --line: #d7e0ea;
+      --panel: rgba(255, 255, 255, 0.92);
+      --rail: #0c3b66;
+      --rail-2: #155a8f;
+      --accent: #d97706;
+      --accent-soft: #fff7ed;
+      --ok: #0f766e;
+      --warn: #b45309;
+      --bg0: #e8f0f7;
+      --bg1: #f4f7fb;
+      --head: linear-gradient(90deg, #0c3b66 0%, #1a5f96 55%, #2a7ab0 100%);
+      --shadow: 0 10px 30px rgba(12, 59, 102, 0.08);
+      --radius: 10px;
+      --font: "IBM Plex Sans SC", "IBM Plex Sans", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: var(--font);
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 8% -10%, rgba(21, 90, 143, 0.18), transparent 60%),
+        radial-gradient(700px 380px at 100% 0%, rgba(217, 119, 6, 0.12), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1) 40%, #eef3f8);
+    }
+
+    .shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 22px 20px 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 4px;
+    }
+
+    .brand strong {
+      font-size: 28px;
+      letter-spacing: 0.02em;
+      color: var(--rail);
+      line-height: 1.15;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chip b { color: var(--ink); font-weight: 600; }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .tab:hover { color: var(--rail); background: rgba(255,255,255,0.55); }
+    .tab.active {
+      color: #fff;
+      background: var(--head);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(215, 224, 234, 0.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .filters {
+      padding: 16px 16px 8px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,251,254,0.9));
+    }
+
+    .field { display: grid; gap: 6px; }
+    .field label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 10px;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: #7aa8cb;
+      box-shadow: 0 0 0 3px rgba(21, 90, 143, 0.12);
+    }
+
+    .actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding-bottom: 8px;
+    }
+
+    .btn {
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 0 16px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--head);
+      color: #fff;
+    }
+
+    .btn-ghost {
+      background: #fff;
+      border-color: var(--line);
+      color: var(--rail);
+    }
+
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, #f8fbfe, #fff8f1);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .summary b {
+      color: var(--rail);
+      font-size: 16px;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: calc(100vh - 320px);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 1600px;
+      font-size: 13px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--head);
+      color: #fff;
+      font-weight: 600;
+      text-align: left;
+      padding: 11px 12px;
+      white-space: nowrap;
+      border-right: 1px solid rgba(255,255,255,0.12);
+    }
+
+    thead th.op {
+      background: linear-gradient(90deg, #c2410c, #ea580c);
+      position: sticky;
+      right: 0;
+      z-index: 3;
+    }
+
+    tbody td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid #eef2f6;
+      white-space: nowrap;
+      background: #fff;
+      vertical-align: middle;
+    }
+
+    tbody tr:nth-child(even) td { background: #f7fafc; }
+    tbody tr:hover td { background: #eef6fc; }
+
+    tbody td.op {
+      position: sticky;
+      right: 0;
+      background: #fff7ed;
+      border-left: 1px solid #fed7aa;
+      z-index: 1;
+    }
+
+    tbody tr:nth-child(even) td.op { background: #ffedd5; }
+    tbody tr:hover td.op { background: #fed7aa; }
+
+    .trunc {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-ok { background: #ccfbf1; color: var(--ok); }
+    .badge-warn { background: #ffedd5; color: var(--warn); }
+    .badge-mute { background: #eef2f6; color: var(--muted); }
+    .badge-group { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+
+    .gear {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid #fdba74;
+      background: #fff;
+      color: #9a3412;
+      cursor: pointer;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+    }
+    .gear svg { width: 14px; height: 14px; fill: currentColor; }
+
+    .foot {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 16px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    .pager { display: flex; gap: 6px; }
+    .pager button {
+      height: 30px;
+      min-width: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font: inherit;
+      cursor: pointer;
+      color: var(--rail);
+    }
+    .pager button.active {
+      background: var(--rail);
+      color: #fff;
+      border-color: var(--rail);
+    }
+
+    .hidden { display: none !important; }
+
+    tbody tr.clickable { cursor: pointer; }
+    tbody tr.clickable.selected td { background: #e0f2fe !important; }
+    tbody tr.clickable.selected td.op { background: #bae6fd !important; }
+
+    .hint {
+      padding: 10px 16px;
+      font-size: 12px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      background: #f8fbfe;
+    }
+
+    .modal-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 28, 42, 0.45);
+      display: grid;
+      place-items: center;
+      z-index: 40;
+      padding: 20px;
+    }
+
+    .modal {
+      width: min(1180px, 100%);
+      max-height: min(86vh, 820px);
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 24px 60px rgba(12, 59, 102, 0.28);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, #f8fbfe, #fff8f1);
+    }
+
+    .modal-head h3 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--rail);
+    }
+
+    .modal-head .sub {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 400;
+      margin-left: 8px;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      color: var(--muted);
+      font: inherit;
+    }
+
+    .modal-body {
+      overflow: auto;
+      flex: 1;
+    }
+
+    .modal-foot {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    @media (max-width: 980px) {
+      .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .topbar { flex-direction: column; align-items: start; }
+      .brand strong { font-size: 24px; }
+      .table-wrap { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <strong>95306 货运业务原型</strong>
+        <span>发送 · 到达 · 股道现车｜双击股道查看车辆明细</span>
+      </div>
+      <div class="meta">
+        <div class="chip">单位 <b>江西樟新盐化铁路发展股份有限公司</b></div>
+        <div class="chip">账号 <b>潘晖晖 / 3206778</b></div>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" type="button" data-tab="send">发送业务</button>
+      <button class="tab" type="button" data-tab="arrival">到达业务</button>
+      <button class="tab" type="button" data-tab="track">股道现车</button>
+    </nav>
+
+    <!-- 发送业务 -->
+    <section id="panel-send" class="panel" data-panel="send">
+      <div class="filters" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+        <div class="field">
+          <label>装车日期 zcqsrq</label>
+          <input id="send-zcqsrq" type="date" value="2026-10-31" />
+        </div>
+        <div class="field">
+          <label>至 zcjzrq</label>
+          <input id="send-zcjzrq" type="date" value="2026-11-03" />
+        </div>
+        <div class="field">
+          <label>货物名称 pm / hzpm</label>
+          <input id="send-pm" placeholder="如 工业用盐" />
+        </div>
+        <div class="field">
+          <label>发站 fztmism / fzhzzm</label>
+          <input id="send-fz" value="樟树东" placeholder="发站名称或 TMIS" />
+        </div>
+        <div class="field">
+          <label>车号 ch</label>
+          <input id="send-ch" placeholder="如 1858294" />
+        </div>
+        <div class="field">
+          <label>箱号 xh</label>
+          <input id="send-xh" placeholder="如 TBJU2437546" />
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" type="button" id="send-query">查询</button>
+          <button class="btn btn-ghost" type="button" id="send-clear">清空</button>
+          <span style="color:var(--muted);font-size:12px;">主筛：装车日期 / 货物名称 / 发站 / 车号 / 箱号 · queryCargoSend</span>
+        </div>
+      </div>
+
+      <div class="summary">
+        <div>车数 <b>159</b> 车</div>
+        <div>单数 <b>211</b> 单</div>
+        <div>重量 <b>7224</b> 吨</div>
+        <div>金额 <b>483753.6</b> 元</div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>序号</th>
+              <th>需求号</th>
+              <th>预约号</th>
+              <th>运输种类</th>
+              <th>电子运单</th>
+              <th>装车日期</th>
+              <th>运单状态</th>
+              <th>领货密码</th>
+              <th>发站</th>
+              <th>发局</th>
+              <th>到站</th>
+              <th>到局</th>
+              <th>货物名称</th>
+              <th>托运人</th>
+              <th>收货人</th>
+              <th>装车地点</th>
+              <th>货物件数</th>
+              <th>车种车型</th>
+              <th>车号</th>
+              <th>成组</th>
+              <th>入线时间(装)</th>
+              <th>开装时间</th>
+              <th>装完时间</th>
+              <th>出线时间(装)</th>
+              <th>运单号</th>
+              <th>制单时间</th>
+              <th>运费(¥)</th>
+              <th>支付状态</th>
+              <th>付款方式</th>
+              <th>付款时间</th>
+              <th>卸车地点</th>
+              <th>箱号</th>
+              <th>承运重量(t)</th>
+              <th>承运件数</th>
+              <th>运价项目号</th>
+              <th class="op">操作</th>
+            </tr>
+          </thead>
+          <tbody id="send-body"></tbody>
+        </table>
+      </div>
+      <div class="foot">
+        <div>共 <b id="send-total">211</b> 条 · 字段对齐 send.txt / data.list</div>
+        <div class="pager">
+          <button type="button">‹</button>
+          <button class="active" type="button">1</button>
+          <button type="button">2</button>
+          <button type="button">3</button>
+          <button type="button">›</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 到达业务 -->
+    <section id="panel-arrival" class="panel hidden" data-panel="arrival">
+      <div class="filters" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+        <div class="field">
+          <label>卸车日期 xcsjStart</label>
+          <input id="arrival-xcsj-start" type="date" value="2026-10-27" />
+        </div>
+        <div class="field">
+          <label>至 xcsjEnd</label>
+          <input id="arrival-xcsj-end" type="date" value="2026-10-30" />
+        </div>
+        <div class="field">
+          <label>货物名称 pm / hzpm</label>
+          <input id="arrival-pm" placeholder="如 氢氧化钠" />
+        </div>
+        <div class="field">
+          <label>到站 dztmism / dzhzzm</label>
+          <input id="arrival-dz" value="樟树东" placeholder="到站名称或 TMIS" />
+        </div>
+        <div class="field">
+          <label>车号 ch</label>
+          <input id="arrival-ch" placeholder="如 3810133" />
+        </div>
+        <div class="field">
+          <label>箱号 xh</label>
+          <input id="arrival-xh" placeholder="箱号" />
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" type="button" id="arrival-query">查询</button>
+          <button class="btn btn-ghost" type="button" id="arrival-clear">清空</button>
+          <span style="color:var(--muted);font-size:12px;">主筛：卸车日期 / 货物名称 / 到站 / 车号 / 箱号 · queryCargoArrival</span>
+        </div>
+      </div>
+
+      <div class="summary">
+        <div>本页 <b>50</b> 条</div>
+        <div>合计 <b>108</b> 单</div>
+        <div>状态示例 <b>货物已交付</b></div>
+        <div>到站 <b>樟树东</b></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>序号</th>
+              <th>运单号</th>
+              <th>托运人</th>
+              <th>发站</th>
+              <th>车号</th>
+              <th>货物名称</th>
+              <th>到站</th>
+              <th>运单状态</th>
+              <th>领货人</th>
+              <th>预约领货时间</th>
+              <th>办理交付手续时间</th>
+              <th>杂费(¥)</th>
+              <th>运输种类</th>
+              <th>收货人</th>
+              <th>到局</th>
+              <th>卸车地点</th>
+              <th>多车/成组</th>
+              <th>货区</th>
+              <th>货位</th>
+              <th>到站时间</th>
+              <th>卸完时间</th>
+              <th>交付时间</th>
+              <th>需求号</th>
+              <th>预约号</th>
+              <th>发局</th>
+              <th>电子运单</th>
+              <th>装车日期</th>
+              <th>发车时间</th>
+              <th>承运重量(t)</th>
+              <th>计费重量(t)</th>
+              <th class="op">操作</th>
+            </tr>
+          </thead>
+          <tbody id="arrival-body"></tbody>
+        </table>
+      </div>
+      <div class="foot">
+        <div>共 <b>108</b> 条 · 字段对齐 response.txt / data.list</div>
+        <div class="pager">
+          <button type="button">‹</button>
+          <button class="active" type="button">1</button>
+          <button type="button">2</button>
+          <button type="button">›</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 股道现车 -->
+    <section id="panel-track" class="panel hidden" data-panel="track">
+      <div class="filters" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+        <div class="field">
+          <label>作业堆场 *</label>
+          <select id="track-yard">
+            <option value="dc1" selected>江西樟新盐化铁路发展股份有限公司专用线--堆场1</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>股道 gdm</label>
+          <select id="track-gdm">
+            <option value="">==请选择==</option>
+            <option value="13D">13D</option>
+            <option value="##1">##1</option>
+            <option value="YZ3">YZ3</option>
+            <option value="YZ2">YZ2</option>
+            <option value="YZ6">YZ6</option>
+            <option value="ZHY3">ZHY3</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>车号 ch</label>
+          <input id="track-ch" placeholder="可选，按车号过滤" />
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" type="button" id="track-query">查询</button>
+          <button class="btn btn-ghost" type="button" id="track-clear">清空</button>
+          <button class="btn btn-ghost" type="button">箱号(车号)追踪</button>
+          <span style="color:var(--muted);font-size:12px;">专用线服务 &gt; 集装箱作业 &gt; 信息查询 &gt; 股道现车</span>
+        </div>
+      </div>
+
+      <div class="hint">第一步：查询股道现车列表。第二步：双击某一股道行，打开「车辆信息」明细。</div>
+
+      <div class="summary">
+        <div>股道 <b id="track-count">6</b> 条</div>
+        <div>现车合计 <b id="track-cars">138</b> 辆</div>
+        <div>堆场 <b>堆场1</b></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>序号</th>
+              <th>股道</th>
+              <th>到达日期</th>
+              <th>车辆数</th>
+              <th>股道内容</th>
+            </tr>
+          </thead>
+          <tbody id="track-body"></tbody>
+        </table>
+      </div>
+      <div class="foot">
+        <div>字段对齐 config/股道现车（第一步 list：gdm/ddrq/clsl/gdnr）</div>
+        <div class="pager">
+          <button type="button">‹</button>
+          <button class="active" type="button">1</button>
+          <button type="button">›</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="car-modal" class="modal-mask hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>车辆信息:<span class="sub" id="car-modal-sub">股道 YZ3</span></h3>
+        <button class="modal-close" type="button" id="car-modal-x" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" aria-label="全选" /></th>
+              <th>序号</th>
+              <th>顺位号</th>
+              <th>票据号</th>
+              <th>票据ID</th>
+              <th>车号</th>
+              <th>车型</th>
+              <th>车种</th>
+              <th>载重(吨)</th>
+              <th>到站</th>
+              <th>到局</th>
+              <th>发站</th>
+              <th>发局</th>
+              <th>品名</th>
+              <th>收货人</th>
+              <th>发货人</th>
+              <th>车次</th>
+              <th>到达日期</th>
+              <th>记事</th>
+              <th>股道名称</th>
+              <th>股道码</th>
+              <th>非运用码</th>
+              <th>空重状态</th>
+              <th>卸股道</th>
+            </tr>
+          </thead>
+          <tbody id="car-body"></tbody>
+        </table>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" type="button">导出</button>
+        <button class="btn btn-primary" type="button" id="car-modal-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sendRows = [
+      {
+        ydid: "254982610294065207", xqslh: "202610GZ140610", ysfs: "集装箱", ifdzyd: "是",
+        zcrq: "2026-11-03", ztgjjcend: "已制单", sfszlhmm: "不设置", fzhzzm: "樟树东", fjm: "南昌局",
+        dzhzzm: "莆田东", djm: "南昌局", hzpm: "工业用盐", fhdwmc: "江西樟新盐化铁路发展股份有限公司",
+        shdwmc: "福建川捷供应链管理有限公司", fzyxhz: "江西樟新盐化铁路发展股份有限公司专用线",
+        hwjs: "2", czcx: "C70E", ch: "1858294", group: "", zcddsj: "2026-11-02 16:07:00",
+        zckssj: "2026-11-03 11:25:29", zcwbsj: "2026-11-03 14:42:57", zcdcsj: "2026-11-03 15:10:00",
+        hph: "ZOGJQ0000070", zpsj: "2026-11-01 09:59:05", yf: "3,234.90", zfzt: "已支付",
+        zffs: "预付款", zfsj: "2026-11-01 10:01:04", dzyxhz: "铁路货场",
+        xh: "TBJU2437546/TBJU2006750", cyrqdzl: "55.00", cyrqdjs: "2", yjxfh: "NC2600722a"
+      },
+      {
+        ydid: "254982610304178233", xqslh: "202610GZ140610", ysfs: "集装箱", ifdzyd: "是",
+        zcrq: "2026-11-03", ztgjjcend: "已制单", sfszlhmm: "不设置", fzhzzm: "樟树东", fjm: "南昌局",
+        dzhzzm: "江阴港", djm: "南昌局", hzpm: "工业用盐", fhdwmc: "江西樟新盐化铁路发展股份有限公司",
+        shdwmc: "福建川捷物流服务有限公司", fzyxhz: "江西樟新盐化铁路发展股份有限公司专用线",
+        hwjs: "1", czcx: "NX70AF", ch: "5744965", group: "成组", zcddsj: "2026-11-02 16:07:00",
+        zckssj: "2026-11-03 11:25:29", zcwbsj: "2026-11-03 14:42:57", zcdcsj: "2026-11-03 15:10:00",
+        hph: "ZOGJX0003135", zpsj: "2026-11-01 09:59:05", yf: "3,234.90", zfzt: "已支付",
+        zffs: "预付款", zfsj: "2026-11-01 10:01:04", dzyxhz: "铁路货场",
+        xh: "TBJU2351777/TBJU2592001", cyrqdzl: "30.00", cyrqdjs: "1", yjxfh: "NC2600721d"
+      },
+      {
+        ydid: "254982610304178234", xqslh: "202610GZ140610", ysfs: "集装箱", ifdzyd: "否",
+        zcrq: "2026-11-03", ztgjjcend: "已制单", sfszlhmm: "不设置", fzhzzm: "樟树东", fjm: "南昌局",
+        dzhzzm: "莆田东", djm: "南昌局", hzpm: "工业用盐", fhdwmc: "中国铁路南昌局集团有限公司",
+        shdwmc: "福建川捷供应链管理有限公司", fzyxhz: "江西樟新盐化铁路发展股份有限公司专用线",
+        hwjs: "1", czcx: "NX70AF", ch: "5490866", group: "成组", zcddsj: "2026-11-02 16:10:00",
+        zckssj: "2026-11-03 11:30:00", zcwbsj: "2026-11-03 14:50:00", zcdcsj: "2026-11-03 15:20:00",
+        hph: "ZOGJX0003136", zpsj: "2026-11-01 10:05:00", yf: "2,980.00", zfzt: "未支付",
+        zffs: "预付款", zfsj: "", dzyxhz: "铁路货场",
+        xh: "TBJU0240687", cyrqdzl: "30.00", cyrqdjs: "1", yjxfh: "NC2600721d"
+      }
+    ];
+
+    const arrivalRows = [
+      {
+        hph: "SZRZT0000936", fhdwmc: "新疆天域物产有限公司", fzhzzm: "石河子", ch: "3810133",
+        hzpm: "氢氧化钠", dzhzzm: "樟树东", ztgjjcend: "货物已交付", lhr: "未设置", yylhsj: "",
+        njfrq: "", zf: "", ysfs: "整车", shdwmc: "江西樟新盐化铁路发展股份有限公司", djm: "南昌局",
+        dzyxhz: "江西樟新盐化铁路发展股份有限公司专用线", czydid: "", hq: "", hw: "",
+        dzsj: "2026-10-29 22:54:56", xcwbsj: "2026-10-30 10:18:23", dzjfrq: "2026-10-30 07:14:00",
+        ydid: "202609RY2550490003", xqslh: "202609RY255049", fjm: "乌鲁木齐局", ifdzyd: "是",
+        zcrq: "2026-10-20", fcsj: "2026-10-23 16:22:00", cyrqdzl: "70.00", jfzlhj: "70.00"
+      },
+      {
+        hph: "SZRZX0010855", fhdwmc: "新疆天域物产有限公司", fzhzzm: "石河子", ch: "3500489",
+        hzpm: "氢氧化钠", dzhzzm: "樟树东", ztgjjcend: "货物已交付", lhr: "未设置", yylhsj: "",
+        njfrq: "", zf: "", ysfs: "整车", shdwmc: "江西樟新盐化铁路发展股份有限公司", djm: "南昌局",
+        dzyxhz: "江西樟新盐化铁路发展股份有限公司专用线", czydid: "", hq: "", hw: "",
+        dzsj: "2026-10-29 22:54:56", xcwbsj: "2026-10-30 10:18:23", dzjfrq: "2026-10-30 07:14:00",
+        ydid: "202609RY2550490006", xqslh: "202609RY255049", fjm: "乌鲁木齐局", ifdzyd: "是",
+        zcrq: "2026-10-22", fcsj: "2026-10-23 02:00:00", cyrqdzl: "58.00", jfzlhj: "58.00"
+      },
+      {
+        hph: "XLFZI0000402", fhdwmc: "中国石油天然气股份有限公司", fzhzzm: "小李庄", ch: "6621436",
+        hzpm: "柴油", dzhzzm: "樟树东", ztgjjcend: "货物已交付", lhr: "未设置", yylhsj: "",
+        njfrq: "", zf: "", ysfs: "整车", shdwmc: "江西省派其联石油有限公司", djm: "南昌局",
+        dzyxhz: "江西樟新盐化铁路发展股份有限公司专用线", czydid: "202610FY4047540053", hq: "", hw: "",
+        dzsj: "2026-10-29 22:50:00", xcwbsj: "2026-10-30 09:40:00", dzjfrq: "2026-10-30 08:10:00",
+        ydid: "202610FY4047540070", xqslh: "202610FY404754", fjm: "郑州局", ifdzyd: "是",
+        zcrq: "2026-10-27", fcsj: "2026-10-28 04:50:00", cyrqdzl: "70.00", jfzlhj: "70.00"
+      }
+    ];
+
+    const trackRows = [
+      { gdm: "13D", ddrq: "", clsl: 9, gdnr: "NX_蛟洋_通二空2/1, C_蛟洋_通二空2/6, X_蛟洋_通二空2/2" },
+      { gdm: "##1", ddrq: "", clsl: 57, gdnr: "C_三元区_空/1, C_湖头_空/1, NX_樟树东_通二重2/2, X_樟树东_通二重2/12, C_樟树东_通二重2/30, C_樟树东_焦炭/10, C_吉安_空/1" },
+      { gdm: "YZ3", ddrq: "", clsl: 22, gdnr: "NX_樟树东_空/7, C_樟树东_空/5, X_樟树东_空/10" },
+      { gdm: "YZ2", ddrq: "", clsl: 39, gdnr: "C_湖头_空/1, C_樟树东_焦炭/36, C_吉安_空/2" },
+      { gdm: "YZ6", ddrq: "", clsl: 2, gdnr: "P_樟树东_空/2" },
+      { gdm: "ZHY3", ddrq: "", clsl: 9, gdnr: "G_樟树东_空/9" }
+    ];
+
+    const trackCarsByGdm = {
+      YZ3: [
+        { swh: 1, pjh: "", pjid: -1, ch: "1754392", cx: "C70E", cz: "C", zz: 0, dzmc: "", djmc: "", fzmc: "樟树东", fjmc: "", pmhz: "空", shrmc: "", fhrmc: "", cc: "45722", ddrq: "2026-11-01 16:51:01", js: "", gdmc: "YZ3", gdm: "YZ3", fyym: "0", kzzt: "空", xgd: "" },
+        { swh: 2, pjh: "", pjid: -1, ch: "1615859", cx: "C70", cz: "C", zz: 0, dzmc: "", djmc: "", fzmc: "樟树东", fjmc: "", pmhz: "空", shrmc: "", fhrmc: "", cc: "45722", ddrq: "2026-11-01 16:51:01", js: "", gdmc: "YZ3", gdm: "YZ3", fyym: "0", kzzt: "空", xgd: "" },
+        { swh: 3, pjh: "", pjid: -1, ch: "5789846", cx: "X70", cz: "X", zz: 0, dzmc: "", djmc: "", fzmc: "樟树东", fjmc: "", pmhz: "空", shrmc: "", fhrmc: "", cc: "45722", ddrq: "2026-11-01 16:51:01", js: "", gdmc: "YZ3", gdm: "YZ3", fyym: "0", kzzt: "空", xgd: "" },
+        { swh: 4, pjh: "", pjid: -1, ch: "5490866", cx: "NX70-F", cz: "NX", zz: 0, dzmc: "", djmc: "", fzmc: "樟树东", fjmc: "", pmhz: "空", shrmc: "", fhrmc: "", cc: "45722", ddrq: "2026-11-01 16:51:01", js: "", gdmc: "YZ3", gdm: "YZ3", fyym: "0", kzzt: "空", xgd: "" }
+      ],
+      "13D": [
+        { swh: 1, pjh: "", pjid: -1, ch: "5311483", cx: "X70", cz: "X", zz: 0, dzmc: "蛟洋", djmc: "", fzmc: "樟树东", fjmc: "", pmhz: "通二空2", shrmc: "", fhrmc: "", cc: "45722", ddrq: "2026-11-01 16:51:01", js: "", gdmc: "13D", gdm: "13D", fyym: "0", kzzt: "空", xgd: "" }
+      ],
+      "##1": [
+        { swh: 1, pjh: "", pjid: -1, ch: "1858294", cx: "C70E", cz: "C", zz: 0, dzmc: "樟树东", djmc: "", fzmc: "樟树东", fjmc: "", pmhz: "焦炭", shrmc: "", fhrmc: "", cc: "45722", ddrq: "2026-11-01 16:51:01", js: "", gdmc: "##1", gdm: "##1", fyym: "0", kzzt: "重", xgd: "" }
+      ],
+      YZ2: [
+        { swh: 1, pjh: "", pjid: -1, ch: "6608708", cx: "C70", cz: "C", zz: 0, dzmc: "樟树东", djmc: "", fzmc: "樟树东", fjmc: "", pmhz: "焦炭", shrmc: "", fhrmc: "", cc: "45722", ddrq: "2026-11-01 16:51:01", js: "", gdmc: "YZ2", gdm: "YZ2", fyym: "0", kzzt: "重", xgd: "" }
+      ],
+      YZ6: [
+        { swh: 1, pjh: "", pjid: -1, ch: "1200001", cx: "P70", cz: "P", zz: 0, dzmc: "樟树东", djmc: "", fzmc: "樟树东", fjmc: "", pmhz: "空", shrmc: "", fhrmc: "", cc: "45722", ddrq: "2026-11-01 16:51:01", js: "", gdmc: "YZ6", gdm: "YZ6", fyym: "0", kzzt: "空", xgd: "" }
+      ],
+      ZHY3: [
+        { swh: 1, pjh: "", pjid: -1, ch: "1300001", cx: "G70", cz: "G", zz: 0, dzmc: "樟树东", djmc: "", fzmc: "樟树东", fjmc: "", pmhz: "空", shrmc: "", fhrmc: "", cc: "45722", ddrq: "2026-11-01 16:51:01", js: "", gdmc: "ZHY3", gdm: "ZHY3", fyym: "0", kzzt: "空", xgd: "" }
+      ]
+    };
+
+    const gearIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.1 7.1 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.13.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.58-.22 1.13-.53 1.63-.94l2.39.96c.25.1.54 0 .68-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>`;
+
+    function esc(v) {
+      return String(v ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function badge(text, type) {
+      if (!text) return "";
+      return `<span class="badge badge-${type}">${esc(text)}</span>`;
+    }
+
+    function toYmdCompact(dateStr) {
+      return (dateStr || "").replace(/-/g, "");
+    }
+
+    function filteredSendRows() {
+      const start = toYmdCompact(document.getElementById("send-zcqsrq").value);
+      const end = toYmdCompact(document.getElementById("send-zcjzrq").value);
+      const pm = (document.getElementById("send-pm").value || "").trim();
+      const fz = (document.getElementById("send-fz").value || "").trim();
+      const ch = (document.getElementById("send-ch").value || "").trim();
+      const xh = (document.getElementById("send-xh").value || "").trim();
+      return sendRows.filter((r) => {
+        const zcrq = toYmdCompact(r.zcrq);
+        if (start && zcrq && zcrq < start) return false;
+        if (end && zcrq && zcrq > end) return false;
+        if (pm && !(r.hzpm || "").includes(pm)) return false;
+        if (fz && !(r.fzhzzm || "").includes(fz) && !(r.fztmism || "").includes(fz)) return false;
+        if (ch && !(r.ch || "").includes(ch)) return false;
+        if (xh && !(r.xh || "").includes(xh)) return false;
+        return true;
+      });
+    }
+
+    function renderSend() {
+      const rows = filteredSendRows();
+      const body = document.getElementById("send-body");
+      const totalEl = document.getElementById("send-total");
+      if (totalEl) totalEl.textContent = String(rows.length);
+      body.innerHTML = rows.map((r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${esc(r.ydid)}</td>
+          <td>${esc(r.xqslh)}</td>
+          <td>${esc(r.ysfs)}</td>
+          <td>${badge(r.ifdzyd, r.ifdzyd === "是" ? "ok" : "mute")}</td>
+          <td>${esc(r.zcrq)}</td>
+          <td>${esc(r.ztgjjcend)}</td>
+          <td>${esc(r.sfszlhmm)}</td>
+          <td>${esc(r.fzhzzm)}</td>
+          <td>${esc(r.fjm)}</td>
+          <td>${esc(r.dzhzzm)}</td>
+          <td>${esc(r.djm)}</td>
+          <td>${esc(r.hzpm)}</td>
+          <td class="trunc" title="${esc(r.fhdwmc)}">${esc(r.fhdwmc)}</td>
+          <td class="trunc" title="${esc(r.shdwmc)}">${esc(r.shdwmc)}</td>
+          <td class="trunc" title="${esc(r.fzyxhz)}">${esc(r.fzyxhz)}</td>
+          <td>${esc(r.hwjs)}</td>
+          <td>${esc(r.czcx)}</td>
+          <td>${esc(r.ch)}</td>
+          <td>${r.group ? badge(r.group, "group") : ""}</td>
+          <td>${esc(r.zcddsj)}</td>
+          <td>${esc(r.zckssj)}</td>
+          <td>${esc(r.zcwbsj)}</td>
+          <td>${esc(r.zcdcsj)}</td>
+          <td>${esc(r.hph)}</td>
+          <td>${esc(r.zpsj)}</td>
+          <td>${esc(r.yf)}</td>
+          <td>${badge(r.zfzt, r.zfzt === "已支付" ? "ok" : "warn")}</td>
+          <td>${esc(r.zffs)}</td>
+          <td>${esc(r.zfsj)}</td>
+          <td>${esc(r.dzyxhz)}</td>
+          <td class="trunc" title="${esc(r.xh)}">${esc(r.xh)}</td>
+          <td>${esc(r.cyrqdzl)}</td>
+          <td>${esc(r.cyrqdjs)}</td>
+          <td>${esc(r.yjxfh)}</td>
+          <td class="op"><button class="gear" type="button" title="操作">${gearIcon}</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function toYmdDash(dateTimeStr) {
+      const s = dateTimeStr || "";
+      return s.length >= 10 ? s.slice(0, 10) : s;
+    }
+
+    function filteredArrivalRows() {
+      const start = document.getElementById("arrival-xcsj-start").value || "";
+      const end = document.getElementById("arrival-xcsj-end").value || "";
+      const pm = (document.getElementById("arrival-pm").value || "").trim();
+      const dz = (document.getElementById("arrival-dz").value || "").trim();
+      const ch = (document.getElementById("arrival-ch").value || "").trim();
+      const xh = (document.getElementById("arrival-xh").value || "").trim();
+      return arrivalRows.filter((r) => {
+        const xc = toYmdDash(r.xcwbsj);
+        if (start && xc && xc < start) return false;
+        if (end && xc && xc > end) return false;
+        if (pm && !(r.hzpm || "").includes(pm)) return false;
+        if (dz && !(r.dzhzzm || "").includes(dz) && !(r.dztmism || "").includes(dz)) return false;
+        if (ch && !(r.ch || "").includes(ch)) return false;
+        if (xh && !(r.xh || "").includes(xh)) return false;
+        return true;
+      });
+    }
+
+    function renderArrival() {
+      const rows = filteredArrivalRows();
+      const body = document.getElementById("arrival-body");
+      body.innerHTML = rows.map((r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${esc(r.hph)}</td>
+          <td class="trunc" title="${esc(r.fhdwmc)}">${esc(r.fhdwmc)}</td>
+          <td>${esc(r.fzhzzm)}</td>
+          <td>${esc(r.ch)}</td>
+          <td>${esc(r.hzpm)}</td>
+          <td>${esc(r.dzhzzm)}</td>
+          <td>${esc(r.ztgjjcend)}</td>
+          <td>${esc(r.lhr)}</td>
+          <td>${esc(r.yylhsj)}</td>
+          <td>${esc(r.njfrq)}</td>
+          <td>${esc(r.zf)}</td>
+          <td>${esc(r.ysfs)}</td>
+          <td class="trunc" title="${esc(r.shdwmc)}">${esc(r.shdwmc)}</td>
+          <td>${esc(r.djm)}</td>
+          <td class="trunc" title="${esc(r.dzyxhz)}">${esc(r.dzyxhz)}</td>
+          <td class="trunc" title="${esc(r.czydid)}">${esc(r.czydid)}</td>
+          <td>${esc(r.hq)}</td>
+          <td>${esc(r.hw)}</td>
+          <td>${esc(r.dzsj)}</td>
+          <td>${esc(r.xcwbsj)}</td>
+          <td>${esc(r.dzjfrq)}</td>
+          <td>${esc(r.ydid)}</td>
+          <td>${esc(r.xqslh)}</td>
+          <td>${esc(r.fjm)}</td>
+          <td>${badge(r.ifdzyd, "ok")}</td>
+          <td>${esc(r.zcrq)}</td>
+          <td>${esc(r.fcsj)}</td>
+          <td>${esc(r.cyrqdzl)}</td>
+          <td>${esc(r.jfzlhj)}</td>
+          <td class="op"><button class="gear" type="button" title="操作">${gearIcon}</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function filteredTracks() {
+      const gdm = document.getElementById("track-gdm").value;
+      const ch = (document.getElementById("track-ch").value || "").trim();
+      return trackRows.filter((r) => {
+        if (gdm && r.gdm !== gdm) return false;
+        if (ch) {
+          const cars = trackCarsByGdm[r.gdm] || [];
+          if (!cars.some((c) => String(c.ch).includes(ch)) && !r.gdnr.includes(ch)) return false;
+        }
+        return true;
+      });
+    }
+
+    function renderTrack() {
+      const rows = filteredTracks();
+      const body = document.getElementById("track-body");
+      document.getElementById("track-count").textContent = String(rows.length);
+      document.getElementById("track-cars").textContent = String(rows.reduce((s, r) => s + Number(r.clsl || 0), 0));
+      body.innerHTML = rows.map((r, i) => `
+        <tr class="clickable" data-gdm="${esc(r.gdm)}" title="双击查看车辆信息">
+          <td>${i + 1}</td>
+          <td><b>${esc(r.gdm)}</b></td>
+          <td>${esc(r.ddrq)}</td>
+          <td>${esc(r.clsl)}</td>
+          <td title="${esc(r.gdnr)}">${esc(r.gdnr)}</td>
+        </tr>
+      `).join("");
+
+      body.querySelectorAll("tr.clickable").forEach((tr) => {
+        tr.addEventListener("dblclick", () => openCarModal(tr.dataset.gdm));
+        tr.addEventListener("click", () => {
+          body.querySelectorAll("tr").forEach((x) => x.classList.remove("selected"));
+          tr.classList.add("selected");
+        });
+      });
+    }
+
+    function openCarModal(gdm) {
+      const cars = trackCarsByGdm[gdm] || [];
+      document.getElementById("car-modal-sub").textContent = `股道 ${gdm} · ${cars.length} 辆`;
+      document.getElementById("car-body").innerHTML = cars.map((r, i) => `
+        <tr>
+          <td><input type="checkbox" /></td>
+          <td>${i + 1}</td>
+          <td>${esc(r.swh)}</td>
+          <td>${esc(r.pjh)}</td>
+          <td>${esc(r.pjid)}</td>
+          <td>${esc(r.ch)}</td>
+          <td>${esc(r.cx)}</td>
+          <td>${esc(r.cz)}</td>
+          <td>${esc(r.zz)}</td>
+          <td>${esc(r.dzmc)}</td>
+          <td>${esc(r.djmc)}</td>
+          <td>${esc(r.fzmc)}</td>
+          <td>${esc(r.fjmc)}</td>
+          <td>${esc(r.pmhz)}</td>
+          <td>${esc(r.shrmc)}</td>
+          <td>${esc(r.fhrmc)}</td>
+          <td>${esc(r.cc)}</td>
+          <td>${esc(r.ddrq)}</td>
+          <td>${esc(r.js)}</td>
+          <td>${esc(r.gdmc)}</td>
+          <td>${esc(r.gdm)}</td>
+          <td>${esc(r.fyym)}</td>
+          <td>${badge(r.kzzt, r.kzzt === "空" ? "mute" : "warn")}</td>
+          <td>${esc(r.xgd)}</td>
+        </tr>
+      `).join("");
+      document.getElementById("car-modal").classList.remove("hidden");
+    }
+
+    function closeCarModal() {
+      document.getElementById("car-modal").classList.add("hidden");
+    }
+
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+        const name = tab.dataset.tab;
+        document.querySelectorAll("[data-panel]").forEach((p) => {
+          p.classList.toggle("hidden", p.dataset.panel !== name);
+        });
+      });
+    });
+
+    document.getElementById("send-query").addEventListener("click", renderSend);
+    document.getElementById("send-clear").addEventListener("click", () => {
+      document.getElementById("send-zcqsrq").value = "";
+      document.getElementById("send-zcjzrq").value = "";
+      document.getElementById("send-pm").value = "";
+      document.getElementById("send-fz").value = "";
+      document.getElementById("send-ch").value = "";
+      document.getElementById("send-xh").value = "";
+      renderSend();
+    });
+
+    document.getElementById("arrival-query").addEventListener("click", renderArrival);
+    document.getElementById("arrival-clear").addEventListener("click", () => {
+      document.getElementById("arrival-xcsj-start").value = "";
+      document.getElementById("arrival-xcsj-end").value = "";
+      document.getElementById("arrival-pm").value = "";
+      document.getElementById("arrival-dz").value = "";
+      document.getElementById("arrival-ch").value = "";
+      document.getElementById("arrival-xh").value = "";
+      renderArrival();
+    });
+
+    document.getElementById("track-query").addEventListener("click", renderTrack);
+    document.getElementById("track-clear").addEventListener("click", () => {
+      document.getElementById("track-gdm").value = "";
+      document.getElementById("track-ch").value = "";
+      renderTrack();
+    });
+    document.getElementById("car-modal-close").addEventListener("click", closeCarModal);
+    document.getElementById("car-modal-x").addEventListener("click", closeCarModal);
+    document.getElementById("car-modal").addEventListener("click", (e) => {
+      if (e.target.id === "car-modal") closeCarModal();
+    });
+
+    renderSend();
+    renderArrival();
+    renderTrack();
+  </script>
+</body>
+</html>
