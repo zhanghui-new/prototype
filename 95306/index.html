@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>95306 货运业务原型 · 设计原型集</title>
+  <style>
+    :root {
+      --bg: #f3f6fa;
+      --card: #ffffff;
+      --text: #1f2a37;
+      --sub: #5b6573;
+      --muted: #8a94a6;
+      --line: #e7edf4;
+      --primary: #2563eb;
+      --primary-soft: #eff4ff;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.05);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(820px 380px at 6% -8%, rgba(37, 99, 235, 0.10), transparent 62%),
+        radial-gradient(680px 340px at 100% 2%, rgba(245, 158, 11, 0.09), transparent 58%),
+        linear-gradient(180deg, #eef3f9, var(--bg) 46%, #eef2f8);
+      -webkit-font-smoothing: antialiased;
+    }
+    .shell {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 64px 24px 56px;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 26px;
+      color: var(--sub);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .back:hover { color: var(--primary); }
+
+    .head { margin-bottom: 34px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      height: 26px;
+      padding: 0 11px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .eyebrow i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: inline-block;
+    }
+    h1 {
+      margin: 16px 0 10px;
+      font-size: 32px;
+      line-height: 1.25;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .lead {
+      margin: 0;
+      max-width: 640px;
+      color: var(--sub);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .item {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 22px 22px 18px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .item:hover {
+      transform: translateY(-3px);
+      border-color: #cfdcea;
+      box-shadow: 0 2px 4px rgba(16, 24, 40, 0.05), 0 16px 36px rgba(16, 24, 40, 0.09);
+    }
+    .item:focus-visible {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    }
+    .item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .idx {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .item:hover .idx { background: var(--primary); color: #fff; }
+    .arrow {
+      color: var(--muted);
+      font-size: 15px;
+      transition: transform 0.18s ease, color 0.18s ease;
+    }
+    .item:hover .arrow { transform: translateX(3px); color: var(--primary); }
+
+    .item h2 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .item p {
+      margin: 0;
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.68;
+      flex: 1;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--line);
+    }
+    .tag {
+      font-size: 11px;
+      color: #64748b;
+      background: #f5f8fc;
+      border: 1px solid #e8eef6;
+      border-radius: 999px;
+      padding: 3px 9px;
+      white-space: nowrap;
+    }
+    .tag-code { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+
+    .foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 40px;
+      padding-top: 18px;
+      border-top: 1px solid #e3eaf3;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .foot a { color: var(--sub); text-decoration: none; border-bottom: 1px solid #d5dfea; }
+    .foot a:hover { color: var(--primary); border-color: var(--primary); }
+
+    @media (max-width: 640px) {
+      .shell { padding: 40px 18px 40px; }
+      h1 { font-size: 25px; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <a class="back" href="../">← 返回原型集</a>
+    <header class="head">
+      <span class="eyebrow"><i></i>95306 货运业务</span>
+      <h1>95306 货运业务原型</h1>
+      <p class="lead">发送、到达、股道现车三个环节的交互原型，以及后台使用统计页面。全部为纯静态页面，数据为演示示例。</p>
+    </header>
+
+    <section class="grid">
+      <a class="item" href="./ec95306-prototype.html">
+        <div class="item-top">
+          <span class="idx">01</span>
+          <span class="arrow">→</span>
+        </div>
+        <h2>发送 / 到达 / 股道现车</h2>
+        <p>装车日期、货物品名、发站等筛选条件的交互演示，筛选项标注了后端接口参数名，便于和后端对齐字段。</p>
+        <div class="tags">
+          <span class="tag tag-code">zcqsrq</span>
+          <span class="tag tag-code">pm / hzpm</span>
+          <span class="tag tag-code">fztmism</span>
+        </div>
+      </a>
+
+      <a class="item" href="./usage-stats.html">
+        <div class="item-top">
+          <span class="idx">02</span>
+          <span class="arrow">→</span>
+        </div>
+        <h2>使用统计</h2>
+        <p>按日 / 周 / 月查看功能模块有效操作与用户使用排行，支持部门筛选、侧滑查看个人明细分项。</p>
+        <div class="tags">
+          <span class="tag">排行榜</span>
+          <span class="tag">使用明细抽屉</span>
+        </div>
+      </a>
+    </section>
+
+    <footer class="foot">
+      <span>静态原型 · 无后端依赖，双击 HTML 也能本地打开</span>
+      <a href="https://github.com/zhanghui-new/prototype" target="_blank" rel="noopener">源码仓库</a>
+    </footer>
+  </main>
+</body>
+</html>
