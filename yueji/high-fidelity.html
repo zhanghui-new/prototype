@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>阅迹 · 读书打卡系统 — 高保真原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============ Design Tokens ============ */
+:root {
+  /* 色板 · 纸墨人文 */
+  --paper: #FAF6EF;          /* 纸白底 */
+  --paper-deep: #F3EDE1;     /* 深纸色 */
+  --ink: #1C1A15;            /* 墨色文字 */
+  --ink-soft: #5C564A;       /* 次级文字 */
+  --ink-faint: #9A9285;      /* 弱文字 */
+  --primary: #B4532A;        /* 赭红 · 打卡主色 */
+  --primary-soft: #F3DFD4;   /* 赭红浅底 */
+  --green: #2D6A4F;          /* 墨绿 · 连续/达成 */
+  --green-soft: #DDEAE3;
+  --amber: #C98F2E;          /* 琥珀 · 成就 */
+  --amber-soft: #F6E9CF;
+  --line: #E8E0D0;           /* 分割线 */
+  --surface: #FFFFFF;        /* 卡片面 */
+  --shadow-card: 0 1px 2px rgba(60,50,30,.05), 0 6px 20px rgba(60,50,30,.07);
+  --shadow-card-hover: 0 2px 6px rgba(60,50,30,.08), 0 12px 32px rgba(60,50,30,.12);
+  /* 间距 · 8pt 网格 */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px; --s10:40px;
+  /* 圆角 */
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-xl:24px; --r-full:999px;
+  /* 动效 */
+  --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+  --ease-standard: cubic-bezier(0.2,0,0,1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Noto Sans SC', -apple-system, sans-serif;
+  background:#EFEBE1;
+  background-image:radial-gradient(circle at 15% 10%, #F5F1E8 0%, #EFEBE1 55%);
+  color:var(--ink);
+  padding:56px 40px 96px;
+  -webkit-font-smoothing:antialiased;
+}
+.serif { font-family:'Noto Serif SC', serif; }
+
+/* ============ 画布头部 ============ */
+.board-head { max-width:1720px; margin:0 auto 48px; }
+.board-brand { display:flex; align-items:baseline; gap:14px; }
+.board-brand h1 { font-family:'Noto Serif SC',serif; font-weight:900; font-size:clamp(30px,3.4vw,44px); letter-spacing:.02em; }
+.board-brand .en { font-size:13px; letter-spacing:.35em; color:var(--ink-faint); text-transform:uppercase; }
+.board-sub { margin-top:10px; color:var(--ink-soft); font-size:14px; line-height:1.8; max-width:640px; }
+.board-tags { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+.board-tags span {
+  font-size:12px; padding:5px 12px; border-radius:var(--r-full);
+  background:rgba(255,255,255,.7); border:1px solid var(--line); color:var(--ink-soft);
+}
+.board-tags span b { color:var(--primary); font-weight:500; }
+
+/* ============ 手机框架 ============ */
+.screen-row { display:flex; flex-wrap:wrap; gap:48px 36px; justify-content:center; max-width:1720px; margin:0 auto; }
+.screen-unit { display:flex; flex-direction:column; align-items:center; gap:16px; }
+.screen-label { text-align:center; }
+.screen-label .num { font-size:11px; letter-spacing:.2em; color:var(--primary); font-weight:700; }
+.screen-label .name { font-family:'Noto Serif SC',serif; font-size:19px; font-weight:700; margin-top:2px; }
+.screen-label .desc { font-size:12.5px; color:var(--ink-faint); margin-top:4px; }
+
+.phone {
+  width:390px; height:844px; border-radius:52px; background:#1C1A15;
+  padding:14px; box-shadow:0 24px 60px rgba(40,32,18,.28), 0 4px 12px rgba(40,32,18,.15);
+  position:relative; flex-shrink:0;
+}
+.phone .notch {
+  position:absolute; top:28px; left:50%; transform:translateX(-50%);
+  width:118px; height:30px; background:#1C1A15; border-radius:0 0 20px 20px; z-index:60;
+}
+.viewport {
+  width:100%; height:100%; border-radius:40px; overflow:hidden;
+  background:var(--paper); position:relative; display:flex; flex-direction:column;
+}
+.statusbar {
+  height:54px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center;
+  padding:14px 34px 0; font-size:15px; font-weight:600; z-index:55; position:relative;
+}
+.statusbar .right { display:flex; gap:6px; align-items:center; font-size:13px; }
+
+/* 底部 Tab Bar */
+.tabbar {
+  flex-shrink:0; height:88px; background:rgba(250,246,239,.92); backdrop-filter:blur(14px);
+  border-top:1px solid var(--line); display:flex; padding:10px 8px 26px; z-index:50;
+}
+.tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:10.5px; color:var(--ink-faint); }
+.tab svg { width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.tab.on { color:var(--primary); font-weight:700; }
+.tab.on svg { stroke-width:2.2; }
+.home-indicator { height:0; }
+
+.scroll-area { flex:1; overflow:hidden; position:relative; }
+
+/* 通用组件 */
+.page-pad { padding:0 20px; }
+.card {
+  background:var(--surface); border-radius:var(--r-lg); box-shadow:var(--shadow-card);
+  padding:var(--s5); transition:box-shadow .25s var(--ease-standard), transform .25s var(--ease-standard);
+}
+.card:hover { box-shadow:var(--shadow-card-hover); transform:translateY(-2px); }
+.section-title {
+  display:flex; justify-content:space-between; align-items:baseline; margin:26px 20px 12px;
+}
+.section-title h3 { font-family:'Noto Serif SC',serif; font-size:17px; font-weight:700; }
+.section-title a { font-size:12px; color:var(--ink-faint); text-decoration:none; }
+
+.btn-primary {
+  height:52px; border-radius:var(--r-md); background:linear-gradient(135deg,#C05F33,#B4532A);
+  color:#FFF9F2; font-size:16.5px; font-weight:700; border:none; width:100%;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  box-shadow:0 6px 18px rgba(180,83,42,.35), inset 0 1px 0 rgba(255,255,255,.25);
+  cursor:pointer; transition:all .2s var(--ease-standard);
+}
+.btn-primary:hover { filter:brightness(1.06); transform:translateY(-1px); }
+.btn-primary:active { transform:scale(.98); filter:brightness(.96); }
+.chip {
+  display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:500;
+  padding:4px 11px; border-radius:var(--r-full);
+}
+
+/* ============ S1 今日 ============ */
+.head-row { display:flex; justify-content:space-between; align-items:center; padding:10px 20px 0; }
+.head-row .hello .date { font-size:12px; color:var(--ink-faint); letter-spacing:.06em; }
+.head-row .hello .hi { font-family:'Noto Serif SC',serif; font-size:22px; font-weight:700; margin-top:3px; }
+.head-row .hi em { font-style:normal; color:var(--primary); }
+.avatar {
+  width:44px; height:44px; border-radius:var(--r-full);
+  background:linear-gradient(135deg,#B4532A,#8A6A3B); color:#FFF7EC;
+  display:flex; align-items:center; justify-content:center; font-family:'Noto Serif SC',serif; font-weight:700; font-size:17px;
+  box-shadow:0 4px 10px rgba(180,83,42,.3); position:relative;
+}
+.avatar::after {
+  content:''; position:absolute; right:-1px; bottom:-1px; width:11px; height:11px;
+  border-radius:50%; background:var(--green); border:2.5px solid var(--paper);
+}
+
+/* 正在读 · Hero */
+.hero { margin:18px 20px 0; position:relative; overflow:visible; background:var(--ink); color:#F6EFDF; border-radius:var(--r-xl); padding:22px; box-shadow:0 12px 32px rgba(28,26,21,.35); }
+.hero::before {
+  content:''; position:absolute; inset:0; border-radius:var(--r-xl);
+  background:radial-gradient(120% 90% at 100% 0%, rgba(224,164,88,.28) 0%, transparent 55%);
+}
+.hero-top { display:flex; gap:16px; position:relative; }
+.book-cover {
+  width:84px; height:118px; border-radius:8px; flex-shrink:0; position:relative;
+  display:flex; flex-direction:column; justify-content:center; padding:10px;
+  box-shadow:0 8px 18px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.08);
+  font-family:'Noto Serif SC',serif; color:#F8F2E4;
+}
+.book-cover::before { content:''; position:absolute; left:7px; top:0; bottom:0; width:1.5px; background:rgba(255,255,255,.22); }
+.bc-1 { background:linear-gradient(150deg,#7A3B1E,#B4532A 70%); }
+.bc-2 { background:linear-gradient(150deg,#1E3A2F,#2D6A4F 70%); }
+.bc-3 { background:linear-gradient(150deg,#5C4A1E,#C98F2E 70%); }
+.bc-4 { background:linear-gradient(150deg,#2B2B3A,#4A4A66 70%); }
+.bc-5 { background:linear-gradient(160deg,#3D2B1F,#8A5A33 70%); }
+.bc-6 { background:linear-gradient(160deg,#21303E,#39586E 70%); }
+.bc-7 { background:linear-gradient(160deg,#4A2340,#7A4A66 70%); }
+.bc-8 { background:linear-gradient(160deg,#3A3A28,#6A6A45 70%); }
+.book-cover .bt { font-size:13.5px; font-weight:700; line-height:1.35; text-shadow:0 1px 2px rgba(0,0,0,.3); }
+.book-cover .ba { font-size:9.5px; opacity:.75; margin-top:6px; letter-spacing:.08em; }
+.hero-info { flex:1; min-width:0; padding-top:4px; }
+.hero-info .lab { font-size:11px; color:rgba(246,239,223,.55); letter-spacing:.25em; }
+.hero-info h2 { font-family:'Noto Serif SC',serif; font-size:21px; font-weight:700; margin:7px 0 4px; }
+.hero-info .author { font-size:12px; color:rgba(246,239,223,.65); }
+.hero-progress { display:flex; align-items:center; gap:12px; margin-top:14px; position:relative; }
+.hero-progress .ring { position:relative; width:46px; height:46px; flex-shrink:0; }
+.hero-progress .ring svg { transform:rotate(-90deg); }
+.hero-progress .ring .pct { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; color:#E0A458; }
+.hero-progress .txt { font-size:12px; color:rgba(246,239,223,.75); line-height:1.6; }
+.hero-progress .txt b { color:#F6EFDF; font-size:13px; }
+.hero-quote {
+  position:relative; margin-top:16px; padding:12px 14px; border-left:2px solid rgba(224,164,88,.7);
+  font-family:'Noto Serif SC',serif; font-size:12.5px; line-height:1.7; color:rgba(246,239,223,.85);
+  background:rgba(255,255,255,.04); border-radius:0 10px 10px 0;
+}
+
+/* 打卡主体 */
+.checkin-zone { margin:18px 20px 0; }
+.streak-strip {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;
+  background:var(--green-soft); border-radius:var(--r-md); padding:12px 16px;
+}
+.streak-strip .flame { display:flex; align-items:center; gap:10px; }
+.flame-ico { font-size:22px; filter:drop-shadow(0 2px 4px rgba(45,106,79,.4)); }
+.streak-strip .n { font-family:'Noto Serif SC',serif; font-weight:900; font-size:19px; color:var(--green); }
+.streak-strip .t { font-size:12px; color:var(--green); opacity:.8; margin-left:2px; }
+.streak-strip .best { font-size:11px; color:var(--ink-soft); text-align:right; line-height:1.5; }
+.goal-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.goal-row .gl { font-size:13px; color:var(--ink-soft); }
+.goal-row .gv { font-size:13px; font-weight:700; }
+.goal-row .gv b { font-family:'Noto Serif SC',serif; font-size:18px; color:var(--primary); }
+.goal-track { height:10px; background:var(--paper-deep); border-radius:var(--r-full); overflow:hidden; margin-bottom:16px; }
+.goal-track .fill { height:100%; width:50%; border-radius:var(--r-full); background:linear-gradient(90deg,#C05F33,#B4532A); position:relative; }
+.goal-track .fill::after { content:''; position:absolute; right:0; top:-2px; width:14px; height:14px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(180,83,42,.5); }
+.btn-primary .flame-mini { font-size:18px; }
+.btn-primary .hint { font-size:12px; font-weight:400; opacity:.8; }
+
+/* 数据速览 */
+.stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 20px 0; }
+.stat-cell { background:var(--surface); border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:14px 8px 12px; text-align:center; transition:transform .25s var(--ease-spring), box-shadow .25s; }
+.stat-cell:hover { transform:translateY(-3px); box-shadow:var(--shadow-card-hover); }
+.stat-cell .v { font-family:'Noto Serif SC',serif; font-size:21px; font-weight:900; }
+.stat-cell .v small { font-size:11px; font-weight:500; color:var(--ink-faint); margin-left:2px; }
+.stat-cell .k { font-size:11px; color:var(--ink-faint); margin-top:3px; }
+.stat-cell.c1 .v { color:var(--primary); } .stat-cell.c2 .v { color:var(--green); } .stat-cell.c3 .v { color:var(--amber); }
+
+/* 本周条形 */
+.week-bars { display:flex; justify-content:space-between; align-items:flex-end; height:86px; padding:0 6px; }
+.wb { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; }
+.wb .bar { width:22px; border-radius:6px 6px 3px 3px; background:var(--primary-soft); position:relative; transition:filter .2s; }
+.wb.done .bar { background:linear-gradient(180deg,#C05F33,#A34A25); }
+.wb.today .bar { background:linear-gradient(180deg,#E0A458,#C98F2E); box-shadow:0 0 0 3px var(--amber-soft); }
+.wb .bar:hover { filter:brightness(1.08); }
+.wb .min { font-size:10px; color:var(--ink-faint); }
+.wb .d { font-size:10.5px; color:var(--ink-soft); }
+.wb.today .d { color:var(--amber); font-weight:700; }
+.wb.tick .d::after { content:' ✓'; color:var(--green); font-weight:700; }
+
+/* ============ S2 统计 ============ */
+.pg-title { padding:8px 20px 0; }
+.pg-title h1 { font-family:'Noto Serif SC',serif; font-size:26px; font-weight:900; }
+.pg-title p { font-size:12px; color:var(--ink-faint); margin-top:4px; }
+.big-streak {
+  margin:16px 20px 0; background:linear-gradient(135deg,#2D6A4F,#1E4A36); border-radius:var(--r-xl);
+  padding:20px; color:#EDF5EF; position:relative; overflow:hidden; box-shadow:0 10px 26px rgba(45,106,79,.32);
+}
+.big-streak::after { content:'🔥'; position:absolute; right:-8px; bottom:-16px; font-size:110px; opacity:.12; }
+.big-streak .row1 { display:flex; align-items:baseline; gap:8px; }
+.big-streak .num { font-family:'Noto Serif SC',serif; font-size:44px; font-weight:900; line-height:1; color:#F6E9CF; }
+.big-streak .unit { font-size:13px; opacity:.8; }
+.big-streak .cap { font-size:12.5px; opacity:.85; margin-top:8px; line-height:1.6; }
+.big-streak .recents { display:flex; gap:6px; margin-top:14px; }
+.recents .dot { width:26px; height:26px; border-radius:8px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:12px; }
+.recents .dot.on { background:#E0A458; color:#3D2B00; font-weight:700; }
+
+.heat-wrap { padding:var(--s5); }
+.heat-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+.heat-head .m { font-family:'Noto Serif SC',serif; font-weight:700; font-size:15px; }
+.heat-head .legend { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--ink-faint); }
+.heat { display:grid; grid-template-columns:repeat(7,1fr); gap:7px; }
+.heat .cell { aspect-ratio:1; border-radius:5px; background:var(--paper-deep); position:relative; transition:transform .18s var(--ease-spring); cursor:pointer; }
+.heat .cell:hover { transform:scale(1.15); }
+.heat .l1 { background:#EBDCC8; } .heat .l2 { background:#E0BFA6; } .heat .l3 { background:#D08A5C; } .heat .l4 { background:#B4532A; }
+.heat .cell.skip { background:transparent; box-shadow:inset 0 0 0 1.5px var(--line); border-radius:50%; }
+.heat .cell.today { box-shadow:0 0 0 2.5px var(--amber); }
+.heat-days { display:grid; grid-template-columns:repeat(7,1fr); gap:7px; margin-top:7px; }
+.heat-days span { text-align:center; font-size:9.5px; color:var(--ink-faint); }
+
+.stat-rows { padding:6px 20px; }
+.srow { display:flex; justify-content:space-between; align-items:center; padding:15px 4px; border-bottom:1px solid var(--line); }
+.srow:last-child { border-bottom:none; }
+.srow .l { display:flex; align-items:center; gap:12px; font-size:14px; font-weight:500; }
+.srow .ico { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; }
+.srow .ico.i1 { background:var(--primary-soft); } .srow .ico.i2 { background:var(--green-soft); }
+.srow .ico.i3 { background:var(--amber-soft); } .srow .ico.i4 { background:#E7E3F4; }
+.srow .r { text-align:right; }
+.srow .rv { font-family:'Noto Serif SC',serif; font-size:18px; font-weight:900; }
+.srow .rk { font-size:10.5px; color:var(--ink-faint); margin-top:2px; }
+
+/* ============ S3 书架 ============ */
+.shelf-tabs { display:flex; gap:8px; padding:14px 20px 6px; }
+.shelf-tab {
+  padding:7px 18px; border-radius:var(--r-full); font-size:13.5px; font-weight:500;
+  color:var(--ink-soft); background:rgba(255,255,255,.7); border:1px solid var(--line); cursor:pointer; transition:all .2s;
+}
+.shelf-tab:hover { transform:translateY(-1px); }
+.shelf-tab.on { background:var(--ink); color:var(--paper); border-color:var(--ink); font-weight:700; }
+.shelf-tab.on small { opacity:.7; }
+.shelf-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:12px 20px 24px; }
+.shelf-card { background:var(--surface); border-radius:var(--r-lg); box-shadow:var(--shadow-card); padding:14px; transition:transform .25s var(--ease-spring), box-shadow .25s; cursor:pointer; }
+.shelf-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-card-hover); }
+.shelf-card .cover-wrap { position:relative; }
+.shelf-card .book-cover { width:100%; height:152px; border-radius:10px; }
+.shelf-card .book-cover .bt { font-size:15px; }
+.tag-abs { position:absolute; top:8px; left:8px; background:rgba(28,26,21,.78); color:#F6EFDF; font-size:10px; padding:3px 9px; border-radius:var(--r-full); backdrop-filter:blur(4px); }
+.shelf-card h4 { font-family:'Noto Serif SC',serif; font-size:14.5px; font-weight:700; margin:12px 2px 3px; }
+.shelf-card .au { font-size:11px; color:var(--ink-faint); margin:0 2px; }
+.mini-progress { margin:10px 2px 2px; }
+.mini-progress .mp-txt { display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-soft); margin-bottom:5px; }
+.mini-progress .mp-txt b { color:var(--primary); }
+.mini-track { height:5px; background:var(--paper-deep); border-radius:var(--r-full); overflow:hidden; }
+.mini-track i { display:block; height:100%; border-radius:var(--r-full); background:linear-gradient(90deg,#C05F33,#B4532A); }
+.mini-track i.g { background:linear-gradient(90deg,#3D8A68,#2D6A4F); }
+.fab {
+  position:absolute; right:18px; bottom:104px; width:56px; height:56px; border-radius:18px;
+  background:linear-gradient(135deg,#C05F33,#A34A25); color:#FFF6EC; border:none; font-size:26px;
+  box-shadow:0 10px 24px rgba(180,83,42,.42); cursor:pointer; z-index:40;
+  transition:transform .22s var(--ease-spring), box-shadow .22s;
+}
+.fab:hover { transform:translateY(-3px) rotate(90deg); box-shadow:0 14px 30px rgba(180,83,42,.5); }
+
+/* ============ S4 打卡完成 ============ */
+.done-screen { background:radial-gradient(140% 90% at 50% 0%, #FBEFE2 0%, var(--paper) 55%); display:flex; flex-direction:column; }
+.done-hero { text-align:center; padding:34px 20px 10px; }
+.seal {
+  width:120px; height:120px; margin:0 auto; border-radius:50%; position:relative;
+  background:radial-gradient(circle at 32% 28%, #D08A5C, #B4532A 65%);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 16px 36px rgba(180,83,42,.4), inset 0 0 0 5px rgba(255,255,255,.18);
+  animation:seal-pop .8s var(--ease-spring) both;
+}
+@keyframes seal-pop { 0%{transform:scale(.3);opacity:0} 60%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
+.seal .tick { width:52px; height:52px; }
+.seal .tick path { stroke:#FFF6EC; stroke-width:7; fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:60; stroke-dashoffset:60; animation:draw .5s .55s var(--ease-decelerate) forwards; }
+@keyframes draw { to { stroke-dashoffset:0; } }
+.done-hero h1 { font-family:'Noto Serif SC',serif; font-size:27px; font-weight:900; margin-top:24px; letter-spacing:.04em; }
+.done-hero .sub { font-size:13px; color:var(--ink-soft); margin-top:8px; line-height:1.7; }
+.done-hero .sub b { color:var(--green); font-weight:700; }
+.spark-row { display:flex; justify-content:center; gap:14px; margin-top:18px; }
+.spark { text-align:center; background:var(--surface); border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:10px 18px; }
+.spark .v { font-family:'Noto Serif SC',serif; font-size:19px; font-weight:900; color:var(--primary); }
+.spark .k { font-size:10px; color:var(--ink-faint); margin-top:2px; }
+.note-card { margin:20px 20px 0; }
+.note-card .nq { font-family:'Noto Serif SC',serif; font-size:13px; line-height:1.8; color:var(--ink-soft); padding:14px 16px; background:var(--paper-deep); border-radius:var(--r-md); }
+.mood-row { display:flex; justify-content:space-between; margin:16px 2px 0; }
+.mood { display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10.5px; color:var(--ink-faint); cursor:pointer; transition:transform .2s var(--ease-spring); }
+.mood:hover { transform:translateY(-2px); }
+.mood .face { width:46px; height:46px; border-radius:50%; background:var(--paper-deep); display:flex; align-items:center; justify-content:center; font-size:21px; transition:all .2s; }
+.mood.on { color:var(--primary); font-weight:700; }
+.mood.on .face { background:var(--primary-soft); box-shadow:0 0 0 2.5px var(--primary); transform:scale(1.08); }
+.stars { display:flex; justify-content:center; gap:8px; margin:16px 0 6px; }
+.star { font-size:25px; color:#DCD3C2; cursor:pointer; transition:transform .18s var(--ease-spring); }
+.star.on { color:var(--amber); text-shadow:0 2px 8px rgba(201,143,46,.45); }
+.star:hover { transform:scale(1.2) rotate(8deg); }
+.done-actions { margin:14px 20px 0; display:flex; flex-direction:column; gap:10px; }
+.btn-ghost {
+  height:48px; border-radius:var(--r-md); background:transparent; border:1.5px solid var(--line);
+  color:var(--ink-soft); font-size:14.5px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:all .2s;
+}
+.btn-ghost:hover { border-color:var(--ink-soft); color:var(--ink); }
+
+/* ============ S5 社区 ============ */
+.comm-tabs { display:flex; padding:12px 20px 8px; gap:24px; border-bottom:1px solid var(--line); margin:0 0 4px; }
+.comm-tab { font-size:15px; color:var(--ink-faint); padding:8px 2px; cursor:pointer; position:relative; font-weight:500; }
+.comm-tab.on { color:var(--ink); font-weight:700; }
+.comm-tab.on::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2.5px; border-radius:2px; background:var(--primary); }
+.feed-item { display:flex; gap:12px; padding:16px 20px; }
+.feed-item + .feed-item { border-top:1px solid var(--line); }
+.f-ava { width:40px; height:40px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:'Noto Serif SC',serif; font-weight:700; font-size:15px; color:#FFF6EC; }
+.f-ava.a1 { background:linear-gradient(135deg,#B4532A,#8A3B1E); }
+.f-ava.a2 { background:linear-gradient(135deg,#2D6A4F,#1E4A36); }
+.f-ava.a3 { background:linear-gradient(135deg,#39586E,#21303E); }
+.f-ava.a4 { background:linear-gradient(135deg,#C98F2E,#8A6218); }
+.f-body { flex:1; min-width:0; }
+.f-head { display:flex; align-items:baseline; gap:8px; }
+.f-head .nm { font-size:14px; font-weight:700; }
+.f-head .lv { font-size:10px; color:var(--green); background:var(--green-soft); padding:2px 7px; border-radius:var(--r-full); font-weight:600; }
+.f-head .tm { font-size:10.5px; color:var(--ink-faint); margin-left:auto; }
+.f-text { font-size:13.5px; line-height:1.75; color:var(--ink-soft); margin-top:7px; }
+.f-text .hl { font-family:'Noto Serif SC',serif; color:var(--ink); }
+.f-quote { margin-top:9px; padding:10px 13px; background:var(--paper-deep); border-radius:var(--r-sm); border-left:2.5px solid var(--amber); font-family:'Noto Serif SC',serif; font-size:12px; line-height:1.7; color:var(--ink-soft); }
+.f-quote .src { display:block; margin-top:5px; font-size:10.5px; color:var(--ink-faint); font-family:'Noto Sans SC',sans-serif; }
+.f-meta { display:flex; align-items:center; gap:18px; margin-top:11px; }
+.f-meta .act { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--ink-faint); cursor:pointer; transition:color .2s; }
+.f-meta .act:hover { color:var(--primary); }
+.f-meta .act.zan.on { color:var(--primary); font-weight:600; }
+.f-book { margin-top:9px; display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-full); padding:5px 12px 5px 6px; font-size:11.5px; color:var(--ink-soft); }
+.f-book .mini-c { width:20px; height:28px; border-radius:4px; }
+
+/* 排行榜 */
+.rank-top { display:flex; gap:10px; padding:18px 16px 10px; align-items:flex-end; }
+.rpod { flex:1; text-align:center; }
+.rpod .crown { font-size:20px; margin-bottom:6px; }
+.rpod .p-ava { width:58px; height:58px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; font-family:'Noto Serif SC',serif; font-weight:700; color:#FFF6EC; font-size:20px; }
+.rpod .nm { font-size:12.5px; font-weight:600; margin-top:8px; }
+.rpod .ds { font-size:10.5px; color:var(--ink-faint); margin-top:2px; }
+.rpod .days { font-family:'Noto Serif SC',serif; font-size:17px; font-weight:900; margin-top:4px; }
+.rpod.p1 .p-ava { width:70px; height:70px; box-shadow:0 0 0 3px var(--amber); }
+.rpod.p2 .p-ava { box-shadow:0 0 0 2.5px #B8B2A5; }
+.rpod.p3 .p-ava { box-shadow:0 0 0 2.5px #C98A5E; }
+.rpod.p1 .days { color:var(--amber); } .rpod.p2 .days { color:#8A857A; } .rpod.p3 .days { color:#C98A5E; }
+.rpod .medal-badge { font-size:10px; padding:2px 9px; border-radius:var(--r-full); margin-top:5px; display:inline-block; }
+.rpod.p1 .medal-badge { background:var(--amber-soft); color:#8A6218; }
+.rpod.p2 .medal-badge { background:#EDEBE6; color:#6A665C; }
+.rpod.p3 .medal-badge { background:#F4E2D2; color:#9A5E32; }
+.rank-list { padding:4px 20px 20px; }
+.rank-row { display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid var(--line); }
+.rank-row:last-child { border-bottom:none; }
+.rank-row .no { width:22px; text-align:center; font-size:13px; font-weight:700; color:var(--ink-faint); }
+.rank-row .p-ava { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-family:'Noto Serif SC',serif; font-weight:700; color:#FFF6EC; }
+.rank-row .nm { font-size:13.5px; font-weight:500; }
+.rank-row .me-tag { font-size:9.5px; color:var(--primary); background:var(--primary-soft); padding:1.5px 7px; border-radius:var(--r-full); margin-left:6px; }
+.rank-row .days { margin-left:auto; font-family:'Noto Serif SC',serif; font-weight:900; font-size:15px; color:var(--ink-soft); }
+.rank-row .days small { font-family:'Noto Sans SC',sans-serif; font-weight:400; font-size:10px; color:var(--ink-faint); }
+
+/* ============ S6 我的 ============ */
+.me-head { display:flex; align-items:center; gap:16px; padding:16px 20px; }
+.me-ava { width:74px; height:74px; border-radius:26px; background:linear-gradient(135deg,#B4532A,#8A6A3B); display:flex; align-items:center; justify-content:center; font-family:'Noto Serif SC',serif; font-size:27px; font-weight:900; color:#FFF6EC; box-shadow:0 8px 20px rgba(180,83,42,.35); }
+.me-info { flex:1; }
+.me-info .nm { display:flex; align-items:center; gap:8px; font-family:'Noto Serif SC',serif; font-size:21px; font-weight:900; }
+.me-info .lv { font-size:10.5px; background:var(--ink); color:var(--paper); padding:3px 10px; border-radius:var(--r-full); font-weight:600; letter-spacing:.05em; }
+.me-info .sig { font-size:12px; color:var(--ink-faint); margin-top:6px; font-family:'Noto Serif SC',serif; }
+.me-stats { display:flex; gap:0; margin-top:12px; }
+.me-stat { flex:1; }
+.me-stat .v { font-family:'Noto Serif SC',serif; font-size:19px; font-weight:900; }
+.me-stat .v small { font-size:10.5px; font-weight:400; color:var(--ink-faint); }
+.me-stat .k { font-size:10.5px; color:var(--ink-faint); margin-top:1px; }
+.me-stat + .me-stat { border-left:1px solid var(--line); padding-left:14px; }
+
+/* 年度目标 */
+.year-card { margin:6px 20px 0; background:linear-gradient(135deg,#3A3428,#1C1A15); color:#F6EFDF; border-radius:var(--r-xl); padding:20px; box-shadow:0 10px 28px rgba(28,26,21,.3); position:relative; overflow:hidden; }
+.year-card::after { content:'📚'; position:absolute; right:-10px; top:-14px; font-size:88px; opacity:.1; }
+.year-card .cap { font-size:11.5px; letter-spacing:.25em; color:rgba(246,239,223,.55); }
+.year-card .row { display:flex; align-items:baseline; gap:6px; margin-top:8px; }
+.year-card .n { font-family:'Noto Serif SC',serif; font-size:36px; font-weight:900; color:#E0A458; }
+.year-card .u { font-size:12.5px; opacity:.75; }
+.year-card .pr { font-size:12px; opacity:.8; margin-left:auto; }
+.year-card .track { height:8px; background:rgba(255,255,255,.14); border-radius:var(--r-full); margin-top:14px; overflow:hidden; }
+.year-card .track i { display:block; height:100%; width:50%; border-radius:var(--r-full); background:linear-gradient(90deg,#C98F2E,#E0A458); }
+.year-card .marks { display:flex; justify-content:space-between; margin-top:8px; font-size:10px; opacity:.5; }
+
+/* 徽章 */
+.badge-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:6px 20px 8px; }
+.badge { text-align:center; cursor:pointer; transition:transform .22s var(--ease-spring); }
+.badge:hover { transform:translateY(-3px); }
+.badge .b-ico { width:56px; height:56px; margin:0 auto; border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:25px; position:relative; }
+.badge.got .b-ico { background:linear-gradient(135deg,var(--amber-soft),#EAD9B0); box-shadow:0 5px 14px rgba(201,143,46,.3), inset 0 0 0 1.5px rgba(201,143,46,.4); }
+.badge.not .b-ico { background:var(--paper-deep); filter:grayscale(1); opacity:.45; }
+.badge .b-ico .lock { position:absolute; right:-3px; bottom:-3px; width:17px; height:17px; border-radius:50%; background:var(--ink-faint); color:#fff; font-size:9px; display:flex; align-items:center; justify-content:center; }
+.badge .b-nm { font-size:10.5px; margin-top:6px; color:var(--ink-soft); }
+.badge.got .b-nm { color:var(--ink); font-weight:600; }
+
+/* 设置列表 */
+.set-list { margin:12px 20px 24px; background:var(--surface); border-radius:var(--r-lg); box-shadow:var(--shadow-card); overflow:hidden; }
+.set-item { display:flex; align-items:center; gap:12px; padding:15px 18px; font-size:14px; border-bottom:1px solid var(--line); cursor:pointer; transition:background .2s; }
+.set-item:last-child { border-bottom:none; }
+.set-item:hover { background:#FCFAF5; }
+.set-item .s-ico { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+.set-item .arrow { margin-left:auto; color:var(--ink-faint); font-size:14px; }
+.set-item .val { margin-left:auto; font-size:12.5px; color:var(--ink-faint); }
+
+/* 页脚说明 */
+.board-foot { text-align:center; margin-top:64px; color:var(--ink-faint); font-size:12px; letter-spacing:.15em; }
+
+/* 入场动画 */
+.screen-unit { animation:rise .7s var(--ease-standard) both; }
+.screen-unit:nth-child(2){animation-delay:.08s}.screen-unit:nth-child(3){animation-delay:.16s}
+.screen-unit:nth-child(4){animation-delay:.24s}.screen-unit:nth-child(5){animation-delay:.32s}
+.screen-unit:nth-child(6){animation-delay:.4s}
+@keyframes rise { from{opacity:0; transform:translateY(28px)} to{opacity:1; transform:none} }
+</style>
+</head>
+<body>
+
+<header class="board-head">
+  <div class="board-brand">
+    <h1>阅迹</h1>
+    <span class="en">READING&nbsp;TRACE</span>
+  </div>
+  <p class="board-sub">读书打卡系统 · 高保真原型 — 每天一刻钟，把日子过成一本书。核心闭环：<b style="color:var(--primary)">阅读 → 计时打卡 → 摘录笔记 → 社区分享 → 连续激励</b>。</p>
+  <div class="board-tags">
+    <span>风格 <b>纸墨人文</b></span>
+    <span>主色 <b>赭红 #B4532A</b></span>
+    <span>字体 <b>Noto Serif SC / Sans SC</b></span>
+    <span>栅格 <b>8pt</b></span>
+    <span>设备 <b>390 × 844</b></span>
+  </div>
+</header>
+
+<div class="screen-row">
+
+<!-- ══════════ S1 今日 ══════════ -->
+<div class="screen-unit">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="viewport">
+      <div class="statusbar"><span>9:41</span><span class="right">●●● ᯤ ▮</span></div>
+      <div class="scroll-area">
+        <div class="head-row">
+          <div class="hello">
+            <div class="date">11月12日 · 周四</div>
+            <div class="hi serif">晚上好，<em>拾页人</em></div>
+          </div>
+          <div class="avatar">拾</div>
+        </div>
+
+        <div class="hero">
+          <div class="hero-top">
+            <div class="book-cover bc-1"><span class="bt">百年孤独</span><span class="ba">加西亚·马尔克斯</span></div>
+            <div class="hero-info">
+              <div class="lab">正 在 读</div>
+              <h2>百年孤独</h2>
+              <div class="author">加西亚·马尔克斯 · 已读至 P312</div>
+              <div class="hero-progress">
+                <div class="ring">
+                  <svg width="46" height="46" viewBox="0 0 46 46">
+                    <circle cx="23" cy="23" r="19" stroke="rgba(255,255,255,.14)" stroke-width="4.5" fill="none"/>
+                    <circle cx="23" cy="23" r="19" stroke="#E0A458" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-dasharray="119.4" stroke-dashoffset="38.2"/>
+                  </svg>
+                  <span class="pct">68%</span>
+                </div>
+                <div class="txt">今日已读 <b>18 分钟</b><br>折合 <b>21 页</b></div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-quote">"过去都是假的，回忆是一条没有归途的路。"</div>
+        </div>
+
+        <div class="checkin-zone">
+          <div class="streak-strip">
+            <div class="flame">
+              <span class="flame-ico">🔥</span>
+              <span class="n">23</span><span class="t">天连续打卡</span>
+            </div>
+            <div class="best">历史最长 41 天<br>距本月全勤还差 6 天</div>
+          </div>
+          <div class="goal-row">
+            <span class="gl">今日目标 30 分钟</span>
+            <span class="gv"><b>18</b> / 30 min</span>
+          </div>
+          <div class="goal-track"><div class="fill"></div></div>
+          <button class="btn-primary">
+            <span class="flame-mini">📖</span> 开始今日阅读
+            <span class="hint">· 剩余 12 分钟达标</span>
+          </button>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-cell c1"><div class="v">4.5<small>时</small></div><div class="k">本周阅读</div></div>
+          <div class="stat-cell c2"><div class="v">12<small>本</small></div><div class="k">今年读完</div></div>
+          <div class="stat-cell c3"><div class="v">86<small>条</small></div><div class="k">摘录笔记</div></div>
+        </div>
+
+        <div class="section-title">
+          <h3>本周节奏</h3><a>统计详情 ›</a>
+        </div>
+        <div class="card week-card" style="margin:0 20px 26px;">
+          <div class="week-bars">
+            <div class="wb done tick"><span class="min">32</span><div class="bar" style="height:46px"></div><span class="d">一</span></div>
+            <div class="wb done tick"><span class="min">28</span><div class="bar" style="height:40px"></div><span class="d">二</span></div>
+            <div class="wb done tick"><span class="min">41</span><div class="bar" style="height:56px"></div><span class="d">三</span></div>
+            <div class="wb done tick"><span class="min">35</span><div class="bar" style="height:50px"></div><span class="d">四</span></div>
+            <div class="wb today"><span class="min">18</span><div class="bar" style="height:26px"></div><span class="d">五</span></div>
+            <div class="wb"><span class="min">—</span><div class="bar" style="height:8px"></div><span class="d">六</span></div>
+            <div class="wb"><span class="min">—</span><div class="bar" style="height:8px"></div><span class="d">日</span></div>
+          </div>
+        </div>
+      </div>
+      <nav class="tabbar">
+        <div class="tab on">
+          <svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>今日
+        </div>
+        <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>书架</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.5 2.8-5.5 5.5-5.5s4.9 2 5.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.8 14.6c2.3.2 4 2 4.5 4.9"/></svg>社区</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1-4.2 4-6.5 7.5-6.5s6.5 2.3 7.5 6.5"/></svg>我的</div>
+      </nav>
+    </div>
+  </div>
+  <div class="screen-label">
+    <div class="num">01 / TODAY</div><div class="name">今日 · 打卡主战场</div>
+    <div class="desc">在读图书进度 · 连续天数 · 目标进度条 · 一键打卡</div>
+  </div>
+</div>
+
+<!-- ══════════ S2 统计 ══════════ -->
+<div class="screen-unit">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="viewport">
+      <div class="statusbar"><span>9:41</span><span class="right">●●● ᯤ ▮</span></div>
+      <div class="scroll-area">
+        <div class="pg-title">
+          <h1>阅读足迹</h1>
+          <p>打卡日历 · 数据总览 · 月度节奏</p>
+        </div>
+
+        <div class="big-streak">
+          <div class="row1"><span class="num">23</span><span class="unit">天</span></div>
+          <div class="cap">连续打卡中 · 超越了 92% 的书友<br>最长纪录 41 天（8月）</div>
+          <div class="recents">
+            <span class="dot on">四</span><span class="dot on">三</span><span class="dot on">二</span><span class="dot on">一</span><span class="dot on">日</span><span class="dot on">六</span><span class="dot on">五</span>
+          </div>
+        </div>
+
+        <div class="card heat-wrap" style="margin:16px 20px 0;">
+          <div class="heat-head">
+            <span class="m serif">11 月 · 打卡日历</span>
+            <div class="legend">
+              <span>少</span>
+              <i style="width:9px;height:9px;border-radius:2.5px;background:var(--paper-deep);display:inline-block"></i>
+              <i style="width:9px;height:9px;border-radius:2.5px;background:#E0BFA6;display:inline-block"></i>
+              <i style="width:9px;height:9px;border-radius:2.5px;background:#D08A5C;display:inline-block"></i>
+              <i style="width:9px;height:9px;border-radius:2.5px;background:#B4532A;display:inline-block"></i>
+              <span>多</span>
+            </div>
+          </div>
+          <div class="heat">
+            <span class="cell l3"></span><span class="cell l2"></span><span class="cell skip"></span><span class="cell l1"></span><span class="cell l4"></span><span class="cell l3"></span><span class="cell l2"></span>
+            <span class="cell l2"></span><span class="cell l1"></span><span class="cell skip"></span><span class="cell l3"></span><span class="cell l4"></span><span class="cell l4"></span><span class="cell l3"></span>
+            <span class="cell l1"></span><span class="cell l2"></span><span class="cell skip"></span><span class="cell l2"></span><span class="cell l3"></span><span class="cell l3"></span><span class="cell l4"></span>
+            <span class="cell l4"></span><span class="cell l3"></span><span class="cell skip"></span><span class="cell l1"></span><span class="cell l2"></span><span class="cell l3"></span><span class="cell l3"></span>
+            <span class="cell l2"></span><span class="cell l3"></span><span class="cell skip"></span><span class="cell l3"></span><span class="cell l4"></span><span class="cell l2"></span><span class="cell today l1"></span>
+            <span class="cell"></span><span class="cell"></span><span class="cell"></span><span class="cell"></span><span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          </div>
+          <div class="heat-days">
+            <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+          </div>
+        </div>
+
+        <div class="section-title"><h3>累计数据</h3><a>导出周报 ›</a></div>
+        <div class="card stat-rows" style="margin:0 20px 26px;">
+          <div class="srow">
+            <div class="l"><span class="ico i1">⏱</span>累计阅读时长</div>
+            <div class="r"><div class="rv serif" style="color:var(--primary)">128.5 <small style="font-size:11px">h</small></div><div class="rk">日均 42 分钟</div></div>
+          </div>
+          <div class="srow">
+            <div class="l"><span class="ico i2">📚</span>读完图书</div>
+            <div class="r"><div class="rv serif" style="color:var(--green)">12 <small style="font-size:11px">本</small></div><div class="rk">年度目标完成 50%</div></div>
+          </div>
+          <div class="srow">
+            <div class="l"><span class="ico i3">✒️</span>摘录与笔记</div>
+            <div class="r"><div class="rv serif" style="color:var(--amber)">86 <small style="font-size:11px">条</small></div><div class="rk">本周新增 9 条</div></div>
+          </div>
+          <div class="srow">
+            <div class="l"><span class="ico i4">🔥</span>打卡天数</div>
+            <div class="r"><div class="rv serif" style="color:#6A5FA8">217 <small style="font-size:11px">天</small></div><div class="rk">加入阅迹 326 天 · 打卡率 66%</div></div>
+          </div>
+        </div>
+      </div>
+      <nav class="tabbar">
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>今日</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>书架</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.5 2.8-5.5 5.5-5.5s4.9 2 5.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.8 14.6c2.3.2 4 2 4.5 4.9"/></svg>社区</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1-4.2 4-6.5 7.5-6.5s6.5 2.3 7.5 6.5"/></svg>我的</div>
+      </nav>
+    </div>
+  </div>
+  <div class="screen-label">
+    <div class="num">02 / STATS</div><div class="name">足迹 · 统计中心</div>
+    <div class="desc">打卡热力日历 · 累计时长 / 读完 / 笔记 / 打卡率</div>
+  </div>
+</div>
+
+<!-- ══════════ S3 书架 ══════════ -->
+<div class="screen-unit">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="viewport">
+      <div class="statusbar"><span>9:41</span><span class="right">●●● ᯤ ▮</span></div>
+      <div class="scroll-area">
+        <div class="pg-title">
+          <h1>书架</h1>
+          <p>在读 3 · 想读 5 · 读完 12</p>
+        </div>
+        <div class="shelf-tabs">
+          <span class="shelf-tab on">在读 <small>3</small></span>
+          <span class="shelf-tab">想读 <small>5</small></span>
+          <span class="shelf-tab">读完 <small>12</small></span>
+        </div>
+        <div class="shelf-grid">
+          <div class="shelf-card">
+            <div class="cover-wrap">
+              <div class="book-cover bc-1"><span class="bt">百年孤独</span><span class="ba">马尔克斯</span></div>
+              <span class="tag-abs">今日在读</span>
+            </div>
+            <h4>百年孤独</h4><div class="au">加西亚·马尔克斯</div>
+            <div class="mini-progress">
+              <div class="mp-txt"><span>P312 / 460</span><b>68%</b></div>
+              <div class="mini-track"><i style="width:68%"></i></div>
+            </div>
+          </div>
+          <div class="shelf-card">
+            <div class="cover-wrap">
+              <div class="book-cover bc-2"><span class="bt">额尔古纳河右岸</span><span class="ba">迟子建</span></div>
+            </div>
+            <h4>额尔古纳河右岸</h4><div class="au">迟子建</div>
+            <div class="mini-progress">
+              <div class="mp-txt"><span>P87 / 262</span><b>33%</b></div>
+              <div class="mini-track"><i style="width:33%"></i></div>
+            </div>
+          </div>
+          <div class="shelf-card">
+            <div class="cover-wrap">
+              <div class="book-cover bc-4"><span class="bt">置身事内</span><span class="ba">兰小欢</span></div>
+            </div>
+            <h4>置身事内</h4><div class="au">兰小欢</div>
+            <div class="mini-progress">
+              <div class="mp-txt"><span>P42 / 336</span><b>13%</b></div>
+              <div class="mini-track"><i style="width:13%"></i></div>
+            </div>
+          </div>
+          <div class="shelf-card">
+            <div class="cover-wrap">
+              <div class="book-cover bc-3"><span class="bt">人类简史</span><span class="ba">赫拉利</span></div>
+              <span class="tag-abs" style="background:rgba(45,106,79,.85)">已读完</span>
+            </div>
+            <h4>人类简史</h4><div class="au">尤瓦尔·赫拉利</div>
+            <div class="mini-progress">
+              <div class="mp-txt"><span>10 月 8 日读完</span><b>4.8 分</b></div>
+              <div class="mini-track"><i class="g" style="width:100%"></i></div>
+            </div>
+          </div>
+        </div>
+        <button class="fab">＋</button>
+      </div>
+      <nav class="tabbar">
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>今日</div>
+        <div class="tab on"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>书架</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.5 2.8-5.5 5.5-5.5s4.9 2 5.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.8 14.6c2.3.2 4 2 4.5 4.9"/></svg>社区</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1-4.2 4-6.5 7.5-6.5s6.5 2.3 7.5 6.5"/></svg>我的</div>
+      </nav>
+    </div>
+  </div>
+  <div class="screen-label">
+    <div class="num">03 / SHELF</div><div class="name">书架 · 我的图书馆</div>
+    <div class="desc">在读 / 想读 / 读完三态 · 进度与评分 · 添加图书</div>
+  </div>
+</div>
+
+<!-- ══════════ S4 打卡完成 ══════════ -->
+<div class="screen-unit">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="viewport done-screen">
+      <div class="statusbar"><span>21:26</span><span class="right">●●● ᯤ ▮</span></div>
+      <div class="scroll-area">
+        <div class="done-hero">
+          <div class="seal">
+            <svg class="tick" viewBox="0 0 52 52"><path d="M14 27l8.5 8.5L38 17"/></svg>
+          </div>
+          <h1 class="serif">打卡成功</h1>
+          <div class="sub">《百年孤独》今日阅读 <b>32 分钟 · 38 页</b><br>已连续打卡 <b>24 天</b>，明日 25 天将点亮「半月勋章」</div>
+          <div class="spark-row">
+            <div class="spark"><div class="v serif">+32</div><div class="k">今日分钟</div></div>
+            <div class="spark"><div class="v serif">+15</div><div class="k">书页积分</div></div>
+            <div class="spark"><div class="v serif">24</div><div class="k">连续天数</div></div>
+          </div>
+        </div>
+
+        <div class="card note-card">
+          <div class="nq">"生命中曾经有过的所有灿烂，原来终究，都需要用寂寞来偿还。"</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;">
+            <span style="font-size:13px;font-weight:600;">今日感受</span>
+            <span style="font-size:11px;color:var(--ink-faint);">42 / 200</span>
+          </div>
+          <div style="margin-top:8px;font-size:13.5px;line-height:1.8;color:var(--ink-soft);min-height:52px;">读到布恩迪亚家族第二代的故事，孤独像宿命一样在每个人身上轮回…</div>
+          <div class="mood-row">
+            <div class="mood on"><span class="face">🤔</span>沉思</div>
+            <div class="mood"><span class="face">😊</span>愉悦</div>
+            <div class="mood"><span class="face">😭</span>触动</div>
+            <div class="mood"><span class="face">🤯</span>震撼</div>
+            <div class="mood"><span class="face">😴</span>平静</div>
+          </div>
+          <div class="stars">
+            <span class="star on">★</span><span class="star on">★</span><span class="star on">★</span><span class="star on">★</span><span class="star">★</span>
+          </div>
+        </div>
+
+        <div class="done-actions">
+          <button class="btn-primary">发布到社区 · 与书友共读</button>
+          <button class="btn-ghost">仅存入我的笔记</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-label">
+    <div class="num">04 / CHECK-IN DONE</div><div class="name">打卡完成 · 情绪留存</div>
+    <div class="desc">盖章动效 · 摘录与感想 · 心情 · 星级 · 分享</div>
+  </div>
+</div>
+
+<!-- ══════════ S5 社区 ══════════ -->
+<div class="screen-unit">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="viewport">
+      <div class="statusbar"><span>9:41</span><span class="right">●●● ᯤ ▮</span></div>
+      <div class="scroll-area">
+        <div class="pg-title">
+          <h1>共读圈</h1>
+          <p>今日 2,847 位书友正在打卡</p>
+        </div>
+        <div class="comm-tabs">
+          <span class="comm-tab on">好友动态</span>
+          <span class="comm-tab">连续排行</span>
+          <span class="comm-tab">附近共读</span>
+        </div>
+
+        <div class="feed-item">
+          <div class="f-ava a2">砚</div>
+          <div class="f-body">
+            <div class="f-head"><span class="nm">青砚</span><span class="lv">Lv.6 书虫</span><span class="tm">8 分钟前</span></div>
+            <div class="f-text"><span class="hl serif">"月亮升起的时候，它照亮的不只是山川，还有人心。"</span> 迟子建笔下的鄂温克人，让我重新理解了自然的神性。今晚读到驯鹿迁徙那段，几乎落泪。</div>
+            <div class="f-quote">我发现，人是可以在一瞬间被一片风景治愈的。<span class="src">— 《额尔古纳河右岸》 P145</span></div>
+            <div class="f-book"><span class="mini-c bc-2"></span>额尔古纳河右岸 · 今日 45 分钟</div>
+            <div class="f-meta">
+              <span class="act zan on">♥ 36</span>
+              <span class="act">💬 8</span>
+              <span class="act">⤴ 收藏</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feed-item">
+          <div class="f-ava a3">川</div>
+          <div class="f-body">
+            <div class="f-head"><span class="nm">临川</span><span class="lv">Lv.4 拾页人</span><span class="tm">1 小时前</span></div>
+            <div class="f-text">连续打卡 <b style="color:var(--primary)">100 天</b> 达成！从每天 15 分钟开始，不知不觉读完 9 本书。打卡的意义不是数字，是让阅读长进生活里。</div>
+            <div class="f-book"><span class="mini-c bc-3"></span>人类简史 · 已读完</div>
+            <div class="f-meta">
+              <span class="act zan">♥ 214</span>
+              <span class="act">💬 32</span>
+              <span class="act">🏅 祝贺</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feed-item">
+          <div class="f-ava a4">南</div>
+          <div class="f-body">
+            <div class="f-head"><span class="nm">南山南</span><span class="lv">Lv.3 夜读者</span><span class="tm">3 小时前</span></div>
+            <div class="f-text">深夜读书打卡第 41 天，夜猫子徽章在向我招手🌙</div>
+            <div class="f-quote">经济学的意义，在于让人谦卑地看待自己的无知。<span class="src">— 《置身事内》 P58</span></div>
+            <div class="f-meta">
+              <span class="act zan on">♥ 57</span>
+              <span class="act">💬 12</span>
+              <span class="act">⤴ 收藏</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="tabbar">
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>今日</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>书架</div>
+        <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.5 2.8-5.5 5.5-5.5s4.9 2 5.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.8 14.6c2.3.2 4 2 4.5 4.9"/></svg>社区</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1-4.2 4-6.5 7.5-6.5s6.5 2.3 7.5 6.5"/></svg>我的</div>
+      </nav>
+    </div>
+  </div>
+  <div class="screen-label">
+    <div class="num">05 / COMMUNITY</div><div class="name">共读圈 · 社区</div>
+    <div class="desc">好友打卡动态 · 摘录卡片 · 连续排行榜</div>
+  </div>
+</div>
+
+<!-- ══════════ S6 我的 ══════════ -->
+<div class="screen-unit">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="viewport">
+      <div class="statusbar"><span>9:41</span><span class="right">●●● ᯤ ▮</span></div>
+      <div class="scroll-area">
+        <div class="me-head">
+          <div class="me-ava">拾</div>
+          <div class="me-info">
+            <div class="nm serif">拾页人<span class="lv">拾页者 · Lv.4</span></div>
+            <div class="sig">每天一刻钟，把日子过成一本书</div>
+            <div class="me-stats">
+              <div class="me-stat"><div class="v serif" style="color:var(--primary)">128.5<small> h</small></div><div class="k">累计时长</div></div>
+              <div class="me-stat"><div class="v serif" style="color:var(--green)">12<small> 本</small></div><div class="k">读完</div></div>
+              <div class="me-stat"><div class="v serif" style="color:var(--amber)">86<small> 条</small></div><div class="k">笔记</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="year-card">
+          <div class="cap">2 0 2 6 · 年 度 阅 读 计 划</div>
+          <div class="row"><span class="n">12</span><span class="u">/ 24 本</span><span class="pr">进度 50% · 领先时间表 9%</span></div>
+          <div class="track"><i></i></div>
+          <div class="marks"><span>1 月</span><span>进度 50%</span><span>12 月</span></div>
+        </div>
+
+        <div class="section-title"><h3>我的徽章</h3><a>全部 24 枚 ›</a></div>
+        <div class="badge-grid">
+          <div class="badge got"><div class="b-ico">🔥<span class="lock" style="display:none"></span></div><div class="b-nm">廿日不辍</div></div>
+          <div class="badge got"><div class="b-ico">🌙</div><div class="b-nm">夜读 30 天</div></div>
+          <div class="badge got"><div class="b-ico">📚</div><div class="b-nm">破卷十二</div></div>
+          <div class="badge got"><div class="b-ico">✒️</div><div class="b-nm">笔记 80 条</div></div>
+          <div class="badge not"><div class="b-ico">🏅<span class="lock">🔒</span></div><div class="b-nm">百日长跑</div></div>
+          <div class="badge not"><div class="b-ico">🌅<span class="lock">🔒</span></div><div class="b-nm">晨读 7 天</div></div>
+          <div class="badge not"><div class="b-ico">🦉<span class="lock">🔒</span></div><div class="b-nm">夜猫子 41</div></div>
+          <div class="badge not"><div class="b-ico">🏛<span class="lock">🔒</span></div><div class="b-nm">全勤一月</div></div>
+        </div>
+
+        <div class="set-list">
+          <div class="set-item"><span class="s-ico" style="background:var(--primary-soft)">⏰</span>每日阅读提醒<span class="val">21:30 · 已开启</span><span class="arrow">›</span></div>
+          <div class="set-item"><span class="s-ico" style="background:var(--green-soft)">🎯</span>每日目标时长<span class="val">30 分钟</span><span class="arrow">›</span></div>
+          <div class="set-item"><span class="s-ico" style="background:var(--amber-soft)">🔖</span>补签卡<span class="val">剩余 2 张</span><span class="arrow">›</span></div>
+          <div class="set-item"><span class="s-ico" style="background:#E7E3F4">📊</span>阅读周报订阅<span class="arrow">›</span></div>
+          <div class="set-item"><span class="s-ico" style="background:#E3EBF0">⚙️</span>设置<span class="arrow">›</span></div>
+        </div>
+      </div>
+      <nav class="tabbar">
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>今日</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>书架</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.5 2.8-5.5 5.5-5.5s4.9 2 5.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.8 14.6c2.3.2 4 2 4.5 4.9"/></svg>社区</div>
+        <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1-4.2 4-6.5 7.5-6.5s6.5 2.3 7.5 6.5"/></svg>我的</div>
+      </nav>
+    </div>
+  </div>
+  <div class="screen-label">
+    <div class="num">06 / ME</div><div class="name">我的 · 个人中心</div>
+    <div class="desc">年度计划 · 成就徽章墙 · 提醒 / 补签 / 周报设置</div>
+  </div>
+</div>
+
+</div>
+
+<footer class="board-foot">阅迹 READING TRACE · 原型 V1.0 · 2026.11 · 390×844 @1x</footer>
+
+</body>
+</html>

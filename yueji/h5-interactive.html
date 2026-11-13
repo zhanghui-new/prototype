@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>阅迹 · 读书打卡 H5（可交互原型）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============ Design Tokens ============ */
+:root {
+  --paper: #FAF6EF;
+  --paper-deep: #F3EDE1;
+  --ink: #1C1A15;
+  --ink-soft: #5C564A;
+  --ink-faint: #9A9285;
+  --primary: #B4532A;
+  --primary-deep: #A34A25;
+  --primary-soft: #F3DFD4;
+  --green: #2D6A4F;
+  --green-soft: #DDEAE3;
+  --amber: #C98F2E;
+  --amber-soft: #F6E9CF;
+  --line: #E8E0D0;
+  --surface: #FFFFFF;
+  --shadow-card: 0 1px 2px rgba(60,50,30,.05), 0 6px 20px rgba(60,50,30,.07);
+  --shadow-card-hover: 0 2px 6px rgba(60,50,30,.08), 0 12px 32px rgba(60,50,30,.12);
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-xl:24px; --r-full:999px;
+  --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+  --ease-standard: cubic-bezier(0.2,0,0,1);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; }
+body {
+  font-family:'Noto Sans SC', -apple-system, sans-serif;
+  background:#EFEBE1 radial-gradient(circle at 15% 10%, #F5F1E8 0%, #EFEBE1 55%);
+  color:var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  min-height:100vh; min-height:100dvh;
+  -webkit-font-smoothing:antialiased;
+}
+.serif { font-family:'Noto Serif SC', serif; }
+
+/* ============ 设备容器 ============ */
+.phone {
+  width:min(390px, 100vw); height:min(844px, 100dvh);
+  border-radius:52px; background:#1C1A15; padding:14px;
+  box-shadow:0 24px 60px rgba(40,32,18,.28), 0 4px 12px rgba(40,32,18,.15);
+  position:relative; flex-shrink:0;
+}
+@media (max-width:430px) {
+  .phone { width:100vw; height:100dvh; border-radius:0; padding:0; box-shadow:none; }
+  .phone .viewport { border-radius:0 !important; }
+}
+.phone .notch {
+  position:absolute; top:28px; left:50%; transform:translateX(-50%);
+  width:118px; height:30px; background:#1C1A15; border-radius:0 0 20px 20px; z-index:60;
+}
+@media (max-width:430px) { .phone .notch { display:none; } }
+.viewport {
+  width:100%; height:100%; border-radius:40px; overflow:hidden;
+  background:var(--paper); position:relative; display:flex; flex-direction:column;
+}
+.statusbar {
+  height:54px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center;
+  padding:14px 34px 0; font-size:15px; font-weight:600; z-index:55; position:relative;
+}
+.statusbar .right { display:flex; gap:6px; align-items:center; font-size:13px; }
+
+/* ============ 屏幕切换 ============ */
+.screen { position:absolute; inset:54px 0 0 0; bottom:0; padding-bottom:88px;
+  display:none; flex-direction:column; background:var(--paper);
+  overflow:hidden;
+}
+/* 计时 / 完成页不显示 Tab，需占满整屏 */
+#scr-timer, #scr-done { padding-bottom:0; }
+.screen.active { display:flex; animation:screen-in .28s var(--ease-standard) both; }
+@keyframes screen-in { from{opacity:0; transform:translateX(14px)} to{opacity:1; transform:none} }
+.scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; }
+.scroll-area::-webkit-scrollbar { display:none; }
+
+/* ============ Tab Bar ============ */
+.tabbar {
+  position:absolute; left:0; right:0; bottom:0; height:88px;
+  background:rgba(250,246,239,.94); backdrop-filter:blur(14px);
+  border-top:1px solid var(--line); display:flex; padding:10px 8px 26px; z-index:50;
+}
+.tab {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; font-size:10.5px; color:var(--ink-faint); cursor:pointer;
+  transition:transform .18s var(--ease-spring); user-select:none;
+}
+.tab:active { transform:scale(.9); }
+.tab svg { width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.tab.on { color:var(--primary); font-weight:700; }
+.tab.on svg { stroke-width:2.2; }
+
+/* ============ 通用 ============ */
+.card {
+  background:var(--surface); border-radius:var(--r-lg); box-shadow:var(--shadow-card);
+  padding:20px; transition:box-shadow .25s var(--ease-standard), transform .25s var(--ease-standard);
+}
+.section-title { display:flex; justify-content:space-between; align-items:baseline; margin:26px 20px 12px; }
+.section-title h3 { font-family:'Noto Serif SC',serif; font-size:17px; font-weight:700; }
+.section-title a { font-size:12px; color:var(--ink-faint); cursor:pointer; }
+.section-title a:hover { color:var(--primary); }
+
+.btn-primary {
+  height:52px; border-radius:var(--r-md); background:linear-gradient(135deg,#C05F33,#B4532A);
+  color:#FFF9F2; font-size:16.5px; font-weight:700; border:none; width:100%;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  box-shadow:0 6px 18px rgba(180,83,42,.35), inset 0 1px 0 rgba(255,255,255,.25);
+  cursor:pointer; transition:all .2s var(--ease-standard); font-family:inherit;
+}
+.btn-primary:hover { filter:brightness(1.06); transform:translateY(-1px); }
+.btn-primary:active { transform:scale(.97); filter:brightness(.95); }
+.btn-ghost {
+  height:48px; border-radius:var(--r-md); background:transparent; border:1.5px solid var(--line);
+  color:var(--ink-soft); font-size:14.5px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:all .2s; font-family:inherit; width:100%;
+}
+.btn-ghost:hover { border-color:var(--ink-soft); color:var(--ink); }
+.btn-ghost:active { transform:scale(.97); }
+
+.pg-title { padding:8px 20px 0; }
+.pg-title h1 { font-family:'Noto Serif SC',serif; font-size:26px; font-weight:900; }
+.pg-title p { font-size:12px; color:var(--ink-faint); margin-top:4px; }
+
+/* 顶部导航（子页面） */
+.sub-nav { display:flex; align-items:center; padding:6px 16px 0; gap:12px; }
+.back-btn {
+  width:38px; height:38px; border-radius:12px; border:1px solid var(--line); background:var(--surface);
+  display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--ink-soft);
+  cursor:pointer; transition:all .2s; flex-shrink:0;
+}
+.back-btn:hover { border-color:var(--primary); color:var(--primary); }
+.back-btn:active { transform:scale(.92); }
+
+/* ============ Toast ============ */
+.toast {
+  position:absolute; left:50%; bottom:120px; transform:translateX(-50%) translateY(20px);
+  background:var(--ink); color:var(--paper); font-size:13px; padding:11px 22px;
+  border-radius:var(--r-full); box-shadow:0 10px 26px rgba(28,26,21,.35);
+  opacity:0; pointer-events:none; transition:all .35s var(--ease-spring); z-index:200; white-space:nowrap;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ============ S1 今日 ============ */
+.head-row { display:flex; justify-content:space-between; align-items:center; padding:10px 20px 0; }
+.head-row .hello .date { font-size:12px; color:var(--ink-faint); letter-spacing:.06em; }
+.head-row .hello .hi { font-family:'Noto Serif SC',serif; font-size:22px; font-weight:700; margin-top:3px; }
+.head-row .hi em { font-style:normal; color:var(--primary); }
+.avatar {
+  width:44px; height:44px; border-radius:var(--r-full);
+  background:linear-gradient(135deg,#B4532A,#8A6A3B); color:#FFF7EC;
+  display:flex; align-items:center; justify-content:center; font-family:'Noto Serif SC',serif; font-weight:700; font-size:17px;
+  box-shadow:0 4px 10px rgba(180,83,42,.3); cursor:pointer; transition:transform .2s var(--ease-spring);
+}
+.avatar:active { transform:scale(.92); }
+
+.hero { margin:18px 20px 0; position:relative; overflow:hidden; background:var(--ink); color:#F6EFDF; border-radius:var(--r-xl); padding:22px; box-shadow:0 12px 32px rgba(28,26,21,.35); }
+.hero::before { content:''; position:absolute; inset:0; border-radius:var(--r-xl); background:radial-gradient(120% 90% at 100% 0%, rgba(224,164,88,.28) 0%, transparent 55%); }
+.hero-top { display:flex; gap:16px; position:relative; }
+.book-cover {
+  width:84px; height:118px; border-radius:8px; flex-shrink:0; position:relative;
+  display:flex; flex-direction:column; justify-content:center; padding:10px;
+  box-shadow:0 8px 18px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.08);
+  font-family:'Noto Serif SC',serif; color:#F8F2E4;
+}
+.book-cover::before { content:''; position:absolute; left:7px; top:0; bottom:0; width:1.5px; background:rgba(255,255,255,.22); }
+.bc-1 { background:linear-gradient(150deg,#7A3B1E,#B4532A 70%); }
+.bc-2 { background:linear-gradient(150deg,#1E3A2F,#2D6A4F 70%); }
+.bc-3 { background:linear-gradient(150deg,#5C4A1E,#C98F2E 70%); }
+.bc-4 { background:linear-gradient(150deg,#2B2B3A,#4A4A66 70%); }
+.bc-5 { background:linear-gradient(160deg,#3D2B1F,#8A5A33 70%); }
+.bc-6 { background:linear-gradient(160deg,#21303E,#39586E 70%); }
+.book-cover .bt { font-size:13.5px; font-weight:700; line-height:1.35; text-shadow:0 1px 2px rgba(0,0,0,.3); }
+.book-cover .ba { font-size:9.5px; opacity:.75; margin-top:6px; letter-spacing:.08em; }
+.hero-info { flex:1; min-width:0; padding-top:4px; }
+.hero-info .lab { font-size:11px; color:rgba(246,239,223,.55); letter-spacing:.25em; }
+.hero-info h2 { font-family:'Noto Serif SC',serif; font-size:21px; font-weight:700; margin:7px 0 4px; }
+.hero-info .author { font-size:12px; color:rgba(246,239,223,.65); }
+.hero-progress { display:flex; align-items:center; gap:12px; margin-top:14px; position:relative; }
+.hero-progress .ring { position:relative; width:46px; height:46px; flex-shrink:0; }
+.hero-progress .ring svg { transform:rotate(-90deg); }
+.hero-progress .ring .pct { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; color:#E0A458; }
+.hero-progress .txt { font-size:12px; color:rgba(246,239,223,.75); line-height:1.6; }
+.hero-progress .txt b { color:#F6EFDF; font-size:13px; }
+.hero-quote { position:relative; margin-top:16px; padding:12px 14px; border-left:2px solid rgba(224,164,88,.7); font-family:'Noto Serif SC',serif; font-size:12.5px; line-height:1.7; color:rgba(246,239,223,.85); background:rgba(255,255,255,.04); border-radius:0 10px 10px 0; }
+
+.checkin-zone { margin:18px 20px 0; }
+.streak-strip { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; background:var(--green-soft); border-radius:var(--r-md); padding:12px 16px; cursor:pointer; transition:transform .2s var(--ease-spring); }
+.streak-strip:active { transform:scale(.98); }
+.streak-strip .flame { display:flex; align-items:center; gap:10px; }
+.flame-ico { font-size:22px; }
+.streak-strip .n { font-family:'Noto Serif SC',serif; font-weight:900; font-size:19px; color:var(--green); }
+.streak-strip .t { font-size:12px; color:var(--green); opacity:.8; margin-left:2px; }
+.streak-strip .best { font-size:11px; color:var(--ink-soft); text-align:right; line-height:1.5; }
+.goal-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.goal-row .gl { font-size:13px; color:var(--ink-soft); }
+.goal-row .gv { font-size:13px; font-weight:700; }
+.goal-row .gv b { font-family:'Noto Serif SC',serif; font-size:18px; color:var(--primary); }
+.goal-track { height:10px; background:var(--paper-deep); border-radius:var(--r-full); overflow:hidden; margin-bottom:16px; }
+.goal-track .fill { height:100%; width:60%; border-radius:var(--r-full); background:linear-gradient(90deg,#C05F33,#B4532A); transition:width .6s var(--ease-standard); }
+
+.stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 20px 0; }
+.stat-cell { background:var(--surface); border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:14px 8px 12px; text-align:center; cursor:pointer; transition:transform .25s var(--ease-spring), box-shadow .25s; }
+.stat-cell:hover { transform:translateY(-3px); box-shadow:var(--shadow-card-hover); }
+.stat-cell:active { transform:scale(.95); }
+.stat-cell .v { font-family:'Noto Serif SC',serif; font-size:21px; font-weight:900; }
+.stat-cell .v small { font-size:11px; font-weight:500; color:var(--ink-faint); margin-left:2px; }
+.stat-cell .k { font-size:11px; color:var(--ink-faint); margin-top:3px; }
+.stat-cell.c1 .v { color:var(--primary); } .stat-cell.c2 .v { color:var(--green); } .stat-cell.c3 .v { color:var(--amber); }
+
+.week-bars { display:flex; justify-content:space-between; align-items:flex-end; height:86px; padding:0 6px; }
+.wb { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; }
+.wb .bar { width:22px; border-radius:6px 6px 3px 3px; background:var(--primary-soft); transition:filter .2s; }
+.wb.done .bar { background:linear-gradient(180deg,#C05F33,#A34A25); }
+.wb.today .bar { background:linear-gradient(180deg,#E0A458,#C98F2E); box-shadow:0 0 0 3px var(--amber-soft); }
+.wb .min { font-size:10px; color:var(--ink-faint); }
+.wb .d { font-size:10.5px; color:var(--ink-soft); }
+.wb.today .d { color:var(--amber); font-weight:700; }
+
+/* ============ S2 足迹 ============ */
+.big-streak { margin:16px 20px 0; background:linear-gradient(135deg,#2D6A4F,#1E4A36); border-radius:var(--r-xl); padding:20px; color:#EDF5EF; position:relative; overflow:hidden; box-shadow:0 10px 26px rgba(45,106,79,.32); }
+.big-streak::after { content:'🔥'; position:absolute; right:-8px; bottom:-16px; font-size:110px; opacity:.12; }
+.big-streak .row1 { display:flex; align-items:baseline; gap:8px; }
+.big-streak .num { font-family:'Noto Serif SC',serif; font-size:44px; font-weight:900; line-height:1; color:#F6E9CF; }
+.big-streak .unit { font-size:13px; opacity:.8; }
+.big-streak .cap { font-size:12.5px; opacity:.85; margin-top:8px; line-height:1.6; }
+.big-streak .recents { display:flex; gap:6px; margin-top:14px; }
+.recents .dot { width:26px; height:26px; border-radius:8px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:12px; }
+.recents .dot.on { background:#E0A458; color:#3D2B00; font-weight:700; }
+
+.heat-wrap { padding:20px; }
+.heat-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+.heat-head .m { font-family:'Noto Serif SC',serif; font-weight:700; font-size:15px; }
+.heat-head .legend { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--ink-faint); }
+.heat { display:grid; grid-template-columns:repeat(7,1fr); gap:7px; }
+.heat .cell { aspect-ratio:1; border-radius:5px; background:var(--paper-deep); position:relative; transition:transform .18s var(--ease-spring); cursor:pointer; }
+.heat .cell:hover { transform:scale(1.15); }
+.heat .l1 { background:#EBDCC8; } .heat .l2 { background:#E0BFA6; } .heat .l3 { background:#D08A5C; } .heat .l4 { background:#B4532A; }
+.heat .cell.skip { background:transparent; box-shadow:inset 0 0 0 1.5px var(--line); border-radius:50%; }
+.heat .cell.today { box-shadow:0 0 0 2.5px var(--amber); }
+.heat-days { display:grid; grid-template-columns:repeat(7,1fr); gap:7px; margin-top:7px; }
+.heat-days span { text-align:center; font-size:9.5px; color:var(--ink-faint); }
+
+.stat-rows { padding:6px 20px; }
+.srow { display:flex; justify-content:space-between; align-items:center; padding:15px 4px; border-bottom:1px solid var(--line); }
+.srow:last-child { border-bottom:none; }
+.srow .l { display:flex; align-items:center; gap:12px; font-size:14px; font-weight:500; }
+.srow .ico { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; }
+.srow .ico.i1 { background:var(--primary-soft); } .srow .ico.i2 { background:var(--green-soft); }
+.srow .ico.i3 { background:var(--amber-soft); } .srow .ico.i4 { background:#E7E3F4; }
+.srow .r { text-align:right; }
+.srow .rv { font-family:'Noto Serif SC',serif; font-size:18px; font-weight:900; }
+.srow .rk { font-size:10.5px; color:var(--ink-faint); margin-top:2px; }
+
+/* ============ S3 书架 ============ */
+.shelf-tabs { display:flex; gap:8px; padding:14px 20px 6px; }
+.shelf-tab { padding:7px 18px; border-radius:var(--r-full); font-size:13.5px; font-weight:500; color:var(--ink-soft); background:rgba(255,255,255,.7); border:1px solid var(--line); cursor:pointer; transition:all .2s; user-select:none; }
+.shelf-tab:active { transform:scale(.95); }
+.shelf-tab.on { background:var(--ink); color:var(--paper); border-color:var(--ink); font-weight:700; }
+.shelf-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:12px 20px 96px; }
+.shelf-card { background:var(--surface); border-radius:var(--r-lg); box-shadow:var(--shadow-card); padding:14px; cursor:pointer; transition:transform .25s var(--ease-spring), box-shadow .25s; }
+.shelf-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-card-hover); }
+.shelf-card:active { transform:scale(.97); }
+.shelf-card .cover-wrap { position:relative; }
+.shelf-card .book-cover { width:100%; height:152px; border-radius:10px; }
+.shelf-card .book-cover .bt { font-size:15px; }
+.tag-abs { position:absolute; top:8px; left:8px; background:rgba(28,26,21,.78); color:#F6EFDF; font-size:10px; padding:3px 9px; border-radius:var(--r-full); }
+.shelf-card h4 { font-family:'Noto Serif SC',serif; font-size:14.5px; font-weight:700; margin:12px 2px 3px; }
+.shelf-card .au { font-size:11px; color:var(--ink-faint); margin:0 2px; }
+.mini-progress { margin:10px 2px 2px; }
+.mini-progress .mp-txt { display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-soft); margin-bottom:5px; }
+.mini-progress .mp-txt b { color:var(--primary); }
+.mini-track { height:5px; background:var(--paper-deep); border-radius:var(--r-full); overflow:hidden; }
+.mini-track i { display:block; height:100%; border-radius:var(--r-full); background:linear-gradient(90deg,#C05F33,#B4532A); }
+.mini-track i.g { background:linear-gradient(90deg,#3D8A68,#2D6A4F); }
+.fab {
+  position:absolute; right:18px; bottom:104px; width:56px; height:56px; border-radius:18px;
+  background:linear-gradient(135deg,#C05F33,#A34A25); color:#FFF6EC; border:none; font-size:26px;
+  box-shadow:0 10px 24px rgba(180,83,42,.42); cursor:pointer; z-index:40; font-family:inherit;
+  transition:transform .22s var(--ease-spring), box-shadow .22s;
+}
+.fab:hover { transform:translateY(-3px); box-shadow:0 14px 30px rgba(180,83,42,.5); }
+.fab:active { transform:scale(.92) rotate(90deg); }
+
+/* 底部弹层（加书） */
+.sheet-mask { position:absolute; inset:0; background:rgba(28,26,21,.45); z-index:150; opacity:0; pointer-events:none; transition:opacity .25s; }
+.sheet-mask.show { opacity:1; pointer-events:auto; }
+.sheet {
+  position:absolute; left:0; right:0; bottom:0; background:var(--paper); z-index:160;
+  border-radius:26px 26px 0 0; padding:14px 22px 34px; transform:translateY(105%);
+  transition:transform .4s var(--ease-spring);
+}
+.sheet.show { transform:translateY(0); }
+.sheet .grab { width:40px; height:4.5px; border-radius:3px; background:var(--line); margin:0 auto 18px; }
+.sheet h3 { font-family:'Noto Serif SC',serif; font-size:19px; font-weight:900; margin-bottom:16px; }
+.form-item { margin-bottom:14px; }
+.form-item label { display:block; font-size:12.5px; color:var(--ink-soft); font-weight:500; margin-bottom:7px; }
+.form-item input, .form-item select {
+  width:100%; height:48px; border:1.5px solid var(--line); border-radius:var(--r-md);
+  background:var(--surface); padding:0 14px; font-size:14.5px; font-family:inherit; color:var(--ink);
+  outline:none; transition:border-color .2s;
+}
+.form-item input:focus, .form-item select:focus { border-color:var(--primary); }
+
+/* ============ S4 计时器 ============ */
+.timer-screen { background:linear-gradient(180deg,#242019 0%, #1C1A15 100%); color:#F6EFDF; }
+.timer-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 32px; }
+.timer-book { width:110px; height:156px; border-radius:10px; margin-bottom:36px; animation:float 4s ease-in-out infinite; }
+.timer-book .bt { font-size:15px; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.timer-label { font-size:12px; letter-spacing:.3em; color:rgba(246,239,223,.5); margin-bottom:14px; }
+.timer-digits { font-family:'Noto Serif SC',serif; font-size:76px; font-weight:900; letter-spacing:.02em; font-variant-numeric:tabular-nums; line-height:1; }
+.timer-digits .dot { animation:blink 1s infinite; }
+@keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:.25} }
+.timer-sub { margin-top:16px; font-size:13px; color:rgba(246,239,223,.6); }
+.timer-goal { margin-top:6px; font-size:12px; color:#E0A458; }
+.timer-actions { display:flex; gap:14px; padding:0 24px 40px; }
+.btn-round {
+  width:64px; height:64px; border-radius:50%; border:1.5px solid rgba(246,239,223,.3);
+  background:rgba(246,239,223,.08); color:#F6EFDF; font-size:13px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  transition:all .2s; font-family:inherit;
+}
+.btn-round:active { transform:scale(.9); background:rgba(246,239,223,.18); }
+.btn-finish {
+  flex:1; height:64px; border-radius:var(--r-full); border:none;
+  background:linear-gradient(135deg,#C05F33,#B4532A); color:#FFF6EC; font-size:16px; font-weight:700;
+  box-shadow:0 8px 24px rgba(180,83,42,.45); cursor:pointer; transition:all .2s; font-family:inherit;
+}
+.btn-finish:active { transform:scale(.97); filter:brightness(.94); }
+.timer-tip { position:absolute; bottom:120px; left:0; right:0; text-align:center; font-size:11.5px; color:rgba(246,239,223,.4); }
+
+/* ============ S5 打卡完成 ============ */
+.done-screen { background:radial-gradient(140% 90% at 50% 0%, #FBEFE2 0%, var(--paper) 55%); }
+.done-hero { text-align:center; padding:26px 20px 10px; }
+.seal {
+  width:116px; height:116px; margin:0 auto; border-radius:50%; position:relative;
+  background:radial-gradient(circle at 32% 28%, #D08A5C, #B4532A 65%);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 16px 36px rgba(180,83,42,.4), inset 0 0 0 5px rgba(255,255,255,.18);
+}
+.seal.pop { animation:seal-pop .8s var(--ease-spring) both; }
+@keyframes seal-pop { 0%{transform:scale(.3);opacity:0} 60%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
+.seal .tick { width:50px; height:50px; }
+.seal.pop .tick path { stroke:#FFF6EC; stroke-width:7; fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:60; stroke-dashoffset:60; animation:draw .5s .55s forwards; }
+@keyframes draw { to { stroke-dashoffset:0; } }
+.done-hero h1 { font-family:'Noto Serif SC',serif; font-size:26px; font-weight:900; margin-top:20px; letter-spacing:.04em; }
+.done-hero .sub { font-size:13px; color:var(--ink-soft); margin-top:8px; line-height:1.7; }
+.done-hero .sub b { color:var(--green); font-weight:700; }
+.spark-row { display:flex; justify-content:center; gap:14px; margin-top:16px; }
+.spark { text-align:center; background:var(--surface); border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:10px 18px; }
+.spark .v { font-family:'Noto Serif SC',serif; font-size:19px; font-weight:900; color:var(--primary); }
+.spark .k { font-size:10px; color:var(--ink-faint); margin-top:2px; }
+.note-card { margin:18px 20px 0; }
+.note-card .nq { font-family:'Noto Serif SC',serif; font-size:13px; line-height:1.8; color:var(--ink-soft); padding:14px 16px; background:var(--paper-deep); border-radius:var(--r-md); cursor:text; }
+.note-card textarea {
+  width:100%; min-height:64px; margin-top:10px; border:1.5px solid var(--line); border-radius:var(--r-md);
+  padding:12px 14px; font-size:13.5px; line-height:1.7; font-family:inherit; color:var(--ink);
+  background:var(--surface); outline:none; resize:none; transition:border-color .2s;
+}
+.note-card textarea:focus { border-color:var(--primary); }
+.mood-row { display:flex; justify-content:space-between; margin:16px 2px 0; }
+.mood { display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10.5px; color:var(--ink-faint); cursor:pointer; transition:transform .2s var(--ease-spring); user-select:none; }
+.mood .face { width:46px; height:46px; border-radius:50%; background:var(--paper-deep); display:flex; align-items:center; justify-content:center; font-size:21px; transition:all .2s; }
+.mood.on { color:var(--primary); font-weight:700; }
+.mood.on .face { background:var(--primary-soft); box-shadow:0 0 0 2.5px var(--primary); transform:scale(1.1); }
+.stars { display:flex; justify-content:center; gap:8px; margin:16px 0 6px; }
+.star { font-size:26px; color:#DCD3C2; cursor:pointer; transition:transform .18s var(--ease-spring); user-select:none; }
+.star.on { color:var(--amber); text-shadow:0 2px 8px rgba(201,143,46,.45); }
+.star:hover { transform:scale(1.2) rotate(8deg); }
+.done-actions { margin:12px 20px 20px; display:flex; flex-direction:column; gap:10px; }
+
+/* ============ S6 社区 ============ */
+.comm-tabs { display:flex; padding:12px 20px 8px; gap:24px; border-bottom:1px solid var(--line); margin-bottom:4px; }
+.comm-tab { font-size:15px; color:var(--ink-faint); padding:8px 2px; cursor:pointer; position:relative; font-weight:500; transition:color .2s; user-select:none; }
+.comm-tab.on { color:var(--ink); font-weight:700; }
+.comm-tab.on::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2.5px; border-radius:2px; background:var(--primary); }
+.feed-item { display:flex; gap:12px; padding:16px 20px; }
+.feed-item + .feed-item { border-top:1px solid var(--line); }
+.feed-item.new { animation:feed-in .5s var(--ease-spring) both; background:linear-gradient(90deg,var(--amber-soft) 0%, transparent 60%); }
+@keyframes feed-in { from{opacity:0; transform:translateY(-12px)} to{opacity:1; transform:none} }
+.f-ava { width:40px; height:40px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:'Noto Serif SC',serif; font-weight:700; font-size:15px; color:#FFF6EC; }
+.f-ava.a1 { background:linear-gradient(135deg,#B4532A,#8A3B1E); }
+.f-ava.a2 { background:linear-gradient(135deg,#2D6A4F,#1E4A36); }
+.f-ava.a3 { background:linear-gradient(135deg,#39586E,#21303E); }
+.f-ava.a4 { background:linear-gradient(135deg,#C98F2E,#8A6218); }
+.f-body { flex:1; min-width:0; }
+.f-head { display:flex; align-items:baseline; gap:8px; }
+.f-head .nm { font-size:14px; font-weight:700; }
+.f-head .lv { font-size:10px; color:var(--green); background:var(--green-soft); padding:2px 7px; border-radius:var(--r-full); font-weight:600; }
+.f-head .tm { font-size:10.5px; color:var(--ink-faint); margin-left:auto; }
+.f-text { font-size:13.5px; line-height:1.75; color:var(--ink-soft); margin-top:7px; }
+.f-text .hl { font-family:'Noto Serif SC',serif; color:var(--ink); }
+.f-quote { margin-top:9px; padding:10px 13px; background:var(--paper-deep); border-radius:var(--r-sm); border-left:2.5px solid var(--amber); font-family:'Noto Serif SC',serif; font-size:12px; line-height:1.7; color:var(--ink-soft); }
+.f-quote .src { display:block; margin-top:5px; font-size:10.5px; color:var(--ink-faint); font-family:'Noto Sans SC',sans-serif; }
+.f-meta { display:flex; align-items:center; gap:18px; margin-top:11px; }
+.f-meta .act { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--ink-faint); cursor:pointer; transition:color .2s, transform .2s; user-select:none; }
+.f-meta .act:active { transform:scale(1.25); }
+.f-meta .act.zan.on { color:var(--primary); font-weight:600; }
+.f-book { margin-top:9px; display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-full); padding:5px 12px 5px 6px; font-size:11.5px; color:var(--ink-soft); }
+.f-book .mini-c { width:20px; height:28px; border-radius:4px; }
+
+/* 排行榜 */
+.rank-top { display:flex; gap:10px; padding:18px 16px 10px; align-items:flex-end; }
+.rpod { flex:1; text-align:center; }
+.rpod .crown { font-size:20px; margin-bottom:6px; }
+.rpod .p-ava { width:58px; height:58px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; font-family:'Noto Serif SC',serif; font-weight:700; color:#FFF6EC; font-size:20px; }
+.rpod .nm { font-size:12.5px; font-weight:600; margin-top:8px; }
+.rpod .ds { font-size:10.5px; color:var(--ink-faint); margin-top:2px; }
+.rpod .days { font-family:'Noto Serif SC',serif; font-size:17px; font-weight:900; margin-top:4px; }
+.rpod.p1 .p-ava { width:70px; height:70px; box-shadow:0 0 0 3px var(--amber); }
+.rpod.p2 .p-ava { box-shadow:0 0 0 2.5px #B8B2A5; }
+.rpod.p3 .p-ava { box-shadow:0 0 0 2.5px #C98A5E; }
+.rpod.p1 .days { color:var(--amber); } .rpod.p2 .days { color:#8A857A; } .rpod.p3 .days { color:#C98A5E; }
+.rank-list { padding:4px 20px 24px; }
+.rank-row { display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid var(--line); }
+.rank-row:last-child { border-bottom:none; }
+.rank-row .no { width:22px; text-align:center; font-size:13px; font-weight:700; color:var(--ink-faint); }
+.rank-row .p-ava { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-family:'Noto Serif SC',serif; font-weight:700; color:#FFF6EC; }
+.rank-row .nm { font-size:13.5px; font-weight:500; }
+.rank-row .me-tag { font-size:9.5px; color:var(--primary); background:var(--primary-soft); padding:1.5px 7px; border-radius:var(--r-full); margin-left:6px; }
+.rank-row .days { margin-left:auto; font-family:'Noto Serif SC',serif; font-weight:900; font-size:15px; color:var(--ink-soft); }
+.rank-row .days small { font-family:'Noto Sans SC',sans-serif; font-weight:400; font-size:10px; color:var(--ink-faint); }
+
+/* ============ S7 我的 ============ */
+.me-head { display:flex; align-items:center; gap:16px; padding:16px 20px; }
+.me-ava { width:74px; height:74px; border-radius:26px; background:linear-gradient(135deg,#B4532A,#8A6A3B); display:flex; align-items:center; justify-content:center; font-family:'Noto Serif SC',serif; font-size:27px; font-weight:900; color:#FFF6EC; box-shadow:0 8px 20px rgba(180,83,42,.35); }
+.me-info { flex:1; }
+.me-info .nm { display:flex; align-items:center; gap:8px; font-family:'Noto Serif SC',serif; font-size:21px; font-weight:900; }
+.me-info .lv { font-size:10.5px; background:var(--ink); color:var(--paper); padding:3px 10px; border-radius:var(--r-full); font-weight:600; letter-spacing:.05em; }
+.me-info .sig { font-size:12px; color:var(--ink-faint); margin-top:6px; font-family:'Noto Serif SC',serif; }
+.me-stats { display:flex; gap:0; margin-top:12px; }
+.me-stat { flex:1; }
+.me-stat .v { font-family:'Noto Serif SC',serif; font-size:19px; font-weight:900; }
+.me-stat .v small { font-size:10.5px; font-weight:400; color:var(--ink-faint); }
+.me-stat .k { font-size:10.5px; color:var(--ink-faint); margin-top:1px; }
+.me-stat + .me-stat { border-left:1px solid var(--line); padding-left:14px; }
+
+.year-card { margin:6px 20px 0; background:linear-gradient(135deg,#3A3428,#1C1A15); color:#F6EFDF; border-radius:var(--r-xl); padding:20px; box-shadow:0 10px 28px rgba(28,26,21,.3); position:relative; overflow:hidden; }
+.year-card::after { content:'📚'; position:absolute; right:-10px; top:-14px; font-size:88px; opacity:.1; }
+.year-card .cap { font-size:11.5px; letter-spacing:.25em; color:rgba(246,239,223,.55); }
+.year-card .row { display:flex; align-items:baseline; gap:6px; margin-top:8px; }
+.year-card .n { font-family:'Noto Serif SC',serif; font-size:36px; font-weight:900; color:#E0A458; }
+.year-card .u { font-size:12.5px; opacity:.75; }
+.year-card .pr { font-size:12px; opacity:.8; margin-left:auto; }
+.year-card .track { height:8px; background:rgba(255,255,255,.14); border-radius:var(--r-full); margin-top:14px; overflow:hidden; }
+.year-card .track i { display:block; height:100%; width:50%; border-radius:var(--r-full); background:linear-gradient(90deg,#C98F2E,#E0A458); }
+.year-card .marks { display:flex; justify-content:space-between; margin-top:8px; font-size:10px; opacity:.5; }
+
+.badge-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:6px 20px 8px; }
+.badge { text-align:center; cursor:pointer; transition:transform .22s var(--ease-spring); }
+.badge:hover { transform:translateY(-3px); }
+.badge:active { transform:scale(.94); }
+.badge .b-ico { width:56px; height:56px; margin:0 auto; border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:25px; position:relative; }
+.badge.got .b-ico { background:linear-gradient(135deg,var(--amber-soft),#EAD9B0); box-shadow:0 5px 14px rgba(201,143,46,.3), inset 0 0 0 1.5px rgba(201,143,46,.4); }
+.badge.not .b-ico { background:var(--paper-deep); filter:grayscale(1); opacity:.45; }
+.badge .b-ico .lock { position:absolute; right:-3px; bottom:-3px; width:17px; height:17px; border-radius:50%; background:var(--ink-faint); color:#fff; font-size:9px; display:flex; align-items:center; justify-content:center; }
+.badge .b-nm { font-size:10.5px; margin-top:6px; color:var(--ink-soft); }
+.badge.got .b-nm { color:var(--ink); font-weight:600; }
+
+.set-list { margin:12px 20px 24px; background:var(--surface); border-radius:var(--r-lg); box-shadow:var(--shadow-card); overflow:hidden; }
+.set-item { display:flex; align-items:center; gap:12px; padding:15px 18px; font-size:14px; border-bottom:1px solid var(--line); cursor:pointer; transition:background .2s; }
+.set-item:last-child { border-bottom:none; }
+.set-item:hover { background:#FCFAF5; }
+.set-item .s-ico { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+.set-item .arrow { margin-left:auto; color:var(--ink-faint); font-size:14px; }
+.set-item .val { margin-left:auto; font-size:12.5px; color:var(--ink-faint); }
+.switch { width:46px; height:27px; border-radius:var(--r-full); background:var(--line); position:relative; margin-left:auto; cursor:pointer; transition:background .25s; flex-shrink:0; }
+.switch::after { content:''; position:absolute; left:2.5px; top:2.5px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.2); transition:transform .25s var(--ease-spring); }
+.switch.on { background:var(--green); }
+.switch.on::after { transform:translateX(19px); }
+
+/* 全局提示条（悬浮于 Tab 上方，数秒后自动淡出） */
+.demo-banner {
+  position:absolute; left:0; right:0; bottom:100px; z-index:180; pointer-events:none;
+  display:flex; justify-content:center;
+}
+.demo-banner span {
+  background:rgba(28,26,21,.85); color:var(--paper); font-size:11.5px; padding:6px 16px;
+  border-radius:var(--r-full); backdrop-filter:blur(6px); opacity:0;
+  animation:banner-in 6.5s .6s both;
+}
+@keyframes banner-in {
+  0%{opacity:0; transform:translateY(8px)}
+  10%{opacity:1; transform:none}
+  82%{opacity:1; transform:none}
+  100%{opacity:0; transform:translateY(-4px)}
+}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="viewport">
+    <div class="statusbar"><span id="clock">9:41</span><span class="right">●●● ᯤ ▮</span></div>
+
+    <!-- ══════ 屏幕：今日 ══════ -->
+    <section class="screen active" id="scr-home">
+      <div class="scroll-area">
+        <div class="head-row">
+          <div class="hello">
+            <div class="date" id="todayDate">11月13日 · 周五</div>
+            <div class="hi serif">早上好，<em>拾页人</em></div>
+          </div>
+          <div class="avatar" data-nav="scr-me">拾</div>
+        </div>
+
+        <div class="hero">
+          <div class="hero-top">
+            <div class="book-cover bc-1"><span class="bt">百年孤独</span><span class="ba">加西亚·马尔克斯</span></div>
+            <div class="hero-info">
+              <div class="lab">正 在 读</div>
+              <h2>百年孤独</h2>
+              <div class="author">加西亚·马尔克斯 · 已读至 P312</div>
+              <div class="hero-progress">
+                <div class="ring">
+                  <svg width="46" height="46" viewBox="0 0 46 46">
+                    <circle cx="23" cy="23" r="19" stroke="rgba(255,255,255,.14)" stroke-width="4.5" fill="none"/>
+                    <circle cx="23" cy="23" r="19" stroke="#E0A458" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-dasharray="119.4" stroke-dashoffset="38.2"/>
+                  </svg>
+                  <span class="pct">68%</span>
+                </div>
+                <div class="txt">今日已读 <b id="todayMin">18 分钟</b><br>折合 <b>21 页</b></div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-quote">"过去都是假的，回忆是一条没有归途的路。"</div>
+        </div>
+
+        <div class="checkin-zone">
+          <div class="streak-strip" data-nav="scr-stats">
+            <div class="flame">
+              <span class="flame-ico">🔥</span>
+              <span class="n" id="streakNum">23</span><span class="t">天连续打卡</span>
+            </div>
+            <div class="best">历史最长 41 天<br>距本月全勤还差 6 天</div>
+          </div>
+          <div class="goal-row">
+            <span class="gl">今日目标 30 分钟</span>
+            <span class="gv"><b id="goalNow">18</b> / 30 min</span>
+          </div>
+          <div class="goal-track"><div class="fill" id="goalFill" style="width:60%"></div></div>
+          <button class="btn-primary" id="btnStart">📖 开始今日阅读 <span style="font-size:12px;font-weight:400;opacity:.8">· 剩余 12 分钟达标</span></button>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-cell c1" data-nav="scr-stats"><div class="v">4.5<small>时</small></div><div class="k">本周阅读</div></div>
+          <div class="stat-cell c2" data-nav="scr-shelf"><div class="v">12<small>本</small></div><div class="k">今年读完</div></div>
+          <div class="stat-cell c3" data-nav="scr-stats"><div class="v">86<small>条</small></div><div class="k">摘录笔记</div></div>
+        </div>
+
+        <div class="section-title">
+          <h3>本周节奏</h3><a data-nav="scr-stats">统计详情 ›</a>
+        </div>
+        <div class="card" style="margin:0 20px 26px;">
+          <div class="week-bars">
+            <div class="wb done"><span class="min">32</span><div class="bar" style="height:46px"></div><span class="d">一</span></div>
+            <div class="wb done"><span class="min">28</span><div class="bar" style="height:40px"></div><span class="d">二</span></div>
+            <div class="wb done"><span class="min">41</span><div class="bar" style="height:56px"></div><span class="d">三</span></div>
+            <div class="wb done"><span class="min">35</span><div class="bar" style="height:50px"></div><span class="d">四</span></div>
+            <div class="wb today"><span class="min" id="todayBarMin">18</span><div class="bar" id="todayBar" style="height:26px"></div><span class="d">五</span></div>
+            <div class="wb"><span class="min">—</span><div class="bar" style="height:8px"></div><span class="d">六</span></div>
+            <div class="wb"><span class="min">—</span><div class="bar" style="height:8px"></div><span class="d">日</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ 屏幕：足迹（统计） ══════ -->
+    <section class="screen" id="scr-stats">
+      <div class="scroll-area">
+        <div class="sub-nav">
+          <div class="back-btn" data-nav="scr-home">‹</div>
+          <div class="pg-title" style="padding:0">
+            <h1 style="font-size:22px">阅读足迹</h1>
+          </div>
+        </div>
+
+        <div class="big-streak">
+          <div class="row1"><span class="num" id="streakBig">23</span><span class="unit">天</span></div>
+          <div class="cap">连续打卡中 · 超越了 92% 的书友<br>最长纪录 41 天（8月）</div>
+          <div class="recents">
+            <span class="dot on">五</span><span class="dot on">四</span><span class="dot on">三</span><span class="dot on">二</span><span class="dot on">一</span><span class="dot on">日</span><span class="dot on">六</span>
+          </div>
+        </div>
+
+        <div class="card heat-wrap" style="margin:16px 20px 0;">
+          <div class="heat-head">
+            <span class="m serif">11 月 · 打卡日历</span>
+            <div class="legend"><span>少</span>
+              <i style="width:9px;height:9px;border-radius:2.5px;background:var(--paper-deep);display:inline-block"></i>
+              <i style="width:9px;height:9px;border-radius:2.5px;background:#E0BFA6;display:inline-block"></i>
+              <i style="width:9px;height:9px;border-radius:2.5px;background:#D08A5C;display:inline-block"></i>
+              <i style="width:9px;height:9px;border-radius:2.5px;background:#B4532A;display:inline-block"></i>
+              <span>多</span></div>
+          </div>
+          <div class="heat" id="heatGrid"></div>
+          <div class="heat-days"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+        </div>
+
+        <div class="section-title"><h3>累计数据</h3><a id="btnReport">导出周报 ›</a></div>
+        <div class="card stat-rows" style="margin:0 20px 26px;">
+          <div class="srow"><div class="l"><span class="ico i1">⏱</span>累计阅读时长</div>
+            <div class="r"><div class="rv serif" style="color:var(--primary)">128.5 <small style="font-size:11px">h</small></div><div class="rk">日均 42 分钟</div></div></div>
+          <div class="srow"><div class="l"><span class="ico i2">📚</span>读完图书</div>
+            <div class="r"><div class="rv serif" style="color:var(--green)">12 <small style="font-size:11px">本</small></div><div class="rk">年度目标完成 50%</div></div></div>
+          <div class="srow"><div class="l"><span class="ico i3">✒️</span>摘录与笔记</div>
+            <div class="r"><div class="rv serif" style="color:var(--amber)">86 <small style="font-size:11px">条</small></div><div class="rk">本周新增 9 条</div></div></div>
+          <div class="srow"><div class="l"><span class="ico i4">🔥</span>打卡天数</div>
+            <div class="r"><div class="rv serif" style="color:#6A5FA8">217 <small style="font-size:11px">天</small></div><div class="rk">加入阅迹 326 天 · 打卡率 66%</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ 屏幕：书架 ══════ -->
+    <section class="screen" id="scr-shelf">
+      <div class="scroll-area">
+        <div class="pg-title">
+          <h1>书架</h1>
+          <p id="shelfCap">在读 3 · 想读 2 · 读完 2</p>
+        </div>
+        <div class="shelf-tabs" id="shelfTabs">
+          <span class="shelf-tab on" data-status="READING">在读 <small>3</small></span>
+          <span class="shelf-tab" data-status="WISH">想读 <small>2</small></span>
+          <span class="shelf-tab" data-status="DONE">读完 <small>2</small></span>
+        </div>
+        <div class="shelf-grid" id="shelfGrid">
+          <div class="shelf-card" data-status="READING" data-book="百年孤独">
+            <div class="cover-wrap">
+              <div class="book-cover bc-1"><span class="bt">百年孤独</span><span class="ba">马尔克斯</span></div>
+              <span class="tag-abs">今日在读</span>
+            </div>
+            <h4>百年孤独</h4><div class="au">加西亚·马尔克斯</div>
+            <div class="mini-progress"><div class="mp-txt"><span>P312 / 460</span><b>68%</b></div><div class="mini-track"><i style="width:68%"></i></div></div>
+          </div>
+          <div class="shelf-card" data-status="READING" data-book="额尔古纳河右岸">
+            <div class="cover-wrap"><div class="book-cover bc-2"><span class="bt">额尔古纳河右岸</span><span class="ba">迟子建</span></div></div>
+            <h4>额尔古纳河右岸</h4><div class="au">迟子建</div>
+            <div class="mini-progress"><div class="mp-txt"><span>P87 / 262</span><b>33%</b></div><div class="mini-track"><i style="width:33%"></i></div></div>
+          </div>
+          <div class="shelf-card" data-status="READING" data-book="置身事内">
+            <div class="cover-wrap"><div class="book-cover bc-4"><span class="bt">置身事内</span><span class="ba">兰小欢</span></div></div>
+            <h4>置身事内</h4><div class="au">兰小欢</div>
+            <div class="mini-progress"><div class="mp-txt"><span>P42 / 336</span><b>13%</b></div><div class="mini-track"><i style="width:13%"></i></div></div>
+          </div>
+          <div class="shelf-card" data-status="WISH" data-book="卡拉马佐夫兄弟">
+            <div class="cover-wrap"><div class="book-cover bc-6"><span class="bt">卡拉马佐夫兄弟</span><span class="ba">陀思妥耶夫斯基</span></div></div>
+            <h4>卡拉马佐夫兄弟</h4><div class="au">陀思妥耶夫斯基</div>
+            <div class="mini-progress"><div class="mp-txt"><span>计划 12 月开读</span><b>想读</b></div><div class="mini-track"><i style="width:0%"></i></div></div>
+          </div>
+          <div class="shelf-card" data-status="WISH" data-book="命运">
+            <div class="cover-wrap"><div class="book-cover bc-5"><span class="bt">命运</span><span class="ba">蔡崇达</span></div></div>
+            <h4>命运</h4><div class="au">蔡崇达</div>
+            <div class="mini-progress"><div class="mp-txt"><span>好友「青砚」推荐</span><b>想读</b></div><div class="mini-track"><i style="width:0%"></i></div></div>
+          </div>
+          <div class="shelf-card" data-status="DONE" data-book="人类简史">
+            <div class="cover-wrap">
+              <div class="book-cover bc-3"><span class="bt">人类简史</span><span class="ba">赫拉利</span></div>
+              <span class="tag-abs" style="background:rgba(45,106,79,.85)">已读完</span>
+            </div>
+            <h4>人类简史</h4><div class="au">尤瓦尔·赫拉利</div>
+            <div class="mini-progress"><div class="mp-txt"><span>10 月 8 日读完</span><b>4.8 分</b></div><div class="mini-track"><i class="g" style="width:100%"></i></div></div>
+          </div>
+          <div class="shelf-card" data-status="DONE" data-book="活着">
+            <div class="cover-wrap"><div class="book-cover bc-5"><span class="bt">活着</span><span class="ba">余华</span></div></div>
+            <h4>活着</h4><div class="au">余华</div>
+            <div class="mini-progress"><div class="mp-txt"><span>9 月 21 日读完</span><b>5.0 分</b></div><div class="mini-track"><i class="g" style="width:100%"></i></div></div>
+          </div>
+        </div>
+      </div>
+      <button class="fab" id="fabAdd">＋</button>
+    </section>
+
+    <!-- ══════ 屏幕：计时器 ══════ -->
+    <section class="screen timer-screen" id="scr-timer">
+      <div class="scroll-area" style="display:flex;flex-direction:column;">
+        <div class="sub-nav" style="padding-top:6px;">
+          <div class="back-btn" data-nav="scr-home" style="background:rgba(246,239,223,.1);border-color:rgba(246,239,223,.25);color:#F6EFDF;">‹</div>
+        </div>
+        <div class="timer-body">
+          <div class="book-cover bc-1 timer-book"><span class="bt">百年孤独</span><span class="ba">加西亚·马尔克斯</span></div>
+          <div class="timer-label">专 注 阅 读 中</div>
+          <div class="timer-digits serif"><span id="timerMm">00</span><span class="dot">:</span><span id="timerSs">00</span></div>
+          <div class="timer-sub">累计今日 18 分钟 + 本次计时</div>
+          <div class="timer-goal" id="timerGoal">再读 12 分钟即达成今日目标</div>
+        </div>
+      </div>
+      <div class="timer-tip">锁屏或切出 App 时计时将自动暂停</div>
+      <div class="timer-actions">
+        <button class="btn-round" id="btnPause">⏸<span style="font-size:10px;margin-top:2px" id="pauseTxt">暂停</span></button>
+        <button class="btn-finish" id="btnFinish">结束阅读 · 完成打卡</button>
+      </div>
+    </section>
+
+    <!-- ══════ 屏幕：打卡完成 ══════ -->
+    <section class="screen done-screen" id="scr-done">
+      <div class="scroll-area">
+        <div class="done-hero">
+          <div class="seal" id="seal">
+            <svg class="tick" viewBox="0 0 52 52"><path d="M14 27l8.5 8.5L38 17"/></svg>
+          </div>
+          <h1 class="serif">打卡成功</h1>
+          <div class="sub">《百年孤独》今日阅读 <b id="doneMin">32 分钟 · 38 页</b><br>已连续打卡 <b id="doneStreak">24 天</b>，明日 25 天将点亮「半月勋章」</div>
+          <div class="spark-row">
+            <div class="spark"><div class="v serif" id="sparkMin">+32</div><div class="k">今日分钟</div></div>
+            <div class="spark"><div class="v serif">+15</div><div class="k">书页积分</div></div>
+            <div class="spark"><div class="v serif" id="sparkStreak">24</div><div class="k">连续天数</div></div>
+          </div>
+        </div>
+
+        <div class="card note-card">
+          <div class="nq" id="quoteBox">"生命中曾经有过的所有灿烂，原来终究，都需要用寂寞来偿还。"</div>
+          <textarea id="noteInput" maxlength="200" placeholder="写下今日感想（≤200 字）…">读到布恩迪亚家族第二代的故事，孤独像宿命一样在每个人身上轮回…</textarea>
+          <div class="mood-row" id="moodRow">
+            <div class="mood on" data-mood="沉思"><span class="face">🤔</span>沉思</div>
+            <div class="mood" data-mood="愉悦"><span class="face">😊</span>愉悦</div>
+            <div class="mood" data-mood="触动"><span class="face">😭</span>触动</div>
+            <div class="mood" data-mood="震撼"><span class="face">🤯</span>震撼</div>
+            <div class="mood" data-mood="平静"><span class="face">😴</span>平静</div>
+          </div>
+          <div class="stars" id="starRow">
+            <span class="star on">★</span><span class="star on">★</span><span class="star on">★</span><span class="star on">★</span><span class="star">★</span>
+          </div>
+        </div>
+
+        <div class="done-actions">
+          <button class="btn-primary" id="btnPublish">发布到社区 · 与书友共读</button>
+          <button class="btn-ghost" id="btnPrivate">仅存入我的笔记</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ 屏幕：社区 ══════ -->
+    <section class="screen" id="scr-comm">
+      <div class="scroll-area">
+        <div class="pg-title">
+          <h1>共读圈</h1>
+          <p>今日 2,847 位书友正在打卡</p>
+        </div>
+        <div class="comm-tabs" id="commTabs">
+          <span class="comm-tab on" data-pane="feed">好友动态</span>
+          <span class="comm-tab" data-pane="rank">连续排行</span>
+        </div>
+
+        <div id="pane-feed">
+          <div id="feedList">
+            <div class="feed-item">
+              <div class="f-ava a2">砚</div>
+              <div class="f-body">
+                <div class="f-head"><span class="nm">青砚</span><span class="lv">Lv.6 书虫</span><span class="tm">8 分钟前</span></div>
+                <div class="f-text"><span class="hl serif">"月亮升起的时候，它照亮的不只是山川，还有人心。"</span> 迟子建笔下的鄂温克人，让我重新理解了自然的神性。今晚读到驯鹿迁徙那段，几乎落泪。</div>
+                <div class="f-quote">我发现，人是可以在一瞬间被一片风景治愈的。<span class="src">— 《额尔古纳河右岸》 P145</span></div>
+                <div class="f-book"><span class="mini-c bc-2"></span>额尔古纳河右岸 · 今日 45 分钟</div>
+                <div class="f-meta">
+                  <span class="act zan" data-like>♥ <b>36</b></span>
+                  <span class="act" data-comment>💬 8</span>
+                  <span class="act" data-collect>⤴ 收藏</span>
+                </div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="f-ava a3">川</div>
+              <div class="f-body">
+                <div class="f-head"><span class="nm">临川</span><span class="lv">Lv.4 拾页人</span><span class="tm">1 小时前</span></div>
+                <div class="f-text">连续打卡 <b style="color:var(--primary)">100 天</b> 达成！从每天 15 分钟开始，不知不觉读完 9 本书。打卡的意义不是数字，是让阅读长进生活里。</div>
+                <div class="f-book"><span class="mini-c bc-3"></span>人类简史 · 已读完</div>
+                <div class="f-meta">
+                  <span class="act zan" data-like>♥ <b>214</b></span>
+                  <span class="act" data-comment>💬 32</span>
+                  <span class="act" data-congrats>🏅 祝贺</span>
+                </div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="f-ava a4">南</div>
+              <div class="f-body">
+                <div class="f-head"><span class="nm">南山南</span><span class="lv">Lv.3 夜读者</span><span class="tm">3 小时前</span></div>
+                <div class="f-text">深夜读书打卡第 41 天，夜猫子徽章在向我招手🌙</div>
+                <div class="f-quote">经济学的意义，在于让人谦卑地看待自己的无知。<span class="src">— 《置身事内》 P58</span></div>
+                <div class="f-meta">
+                  <span class="act zan" data-like>♥ <b>57</b></span>
+                  <span class="act" data-comment>💬 12</span>
+                  <span class="act" data-collect>⤴ 收藏</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="pane-rank" style="display:none">
+          <div class="rank-top">
+            <div class="rpod p2"><div class="crown">🥈</div><div class="p-ava f-ava a3" style="margin:0 auto">川</div><div class="nm">临川</div><div class="days serif">100</div></div>
+            <div class="rpod p1"><div class="crown">👑</div><div class="p-ava f-ava a2" style="margin:0 auto">砚</div><div class="nm">青砚</div><div class="days serif">126</div></div>
+            <div class="rpod p3"><div class="crown">🥉</div><div class="p-ava f-ava a4" style="margin:0 auto">南</div><div class="nm">南山南</div><div class="days serif">41</div></div>
+          </div>
+          <div class="rank-list">
+            <div class="rank-row"><span class="no">4</span><span class="p-ava f-ava a1">拾</span><span class="nm">拾页人<span class="me-tag">我</span></span><span class="days serif" id="myRankDays">23 <small>天</small></span></div>
+            <div class="rank-row"><span class="no">5</span><span class="p-ava f-ava a3">江</span><span class="nm">江上客</span><span class="days serif">19 <small>天</small></span></div>
+            <div class="rank-row"><span class="no">6</span><span class="p-ava f-ava a2">苔</span><span class="nm">青苔</span><span class="days serif">15 <small>天</small></span></div>
+            <div class="rank-row"><span class="no">7</span><span class="p-ava f-ava a4">灯</span><span class="nm">灯下人</span><span class="days serif">12 <small>天</small></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ 屏幕：我的 ══════ -->
+    <section class="screen" id="scr-me">
+      <div class="scroll-area">
+        <div class="me-head">
+          <div class="me-ava">拾</div>
+          <div class="me-info">
+            <div class="nm serif">拾页人<span class="lv">拾页者 · Lv.4</span></div>
+            <div class="sig">每天一刻钟，把日子过成一本书</div>
+            <div class="me-stats">
+              <div class="me-stat"><div class="v serif" style="color:var(--primary)">128.5<small> h</small></div><div class="k">累计时长</div></div>
+              <div class="me-stat"><div class="v serif" style="color:var(--green)">12<small> 本</small></div><div class="k">读完</div></div>
+              <div class="me-stat"><div class="v serif" style="color:var(--amber)">86<small> 条</small></div><div class="k">笔记</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="year-card">
+          <div class="cap">2 0 2 6 · 年 度 阅 读 计 划</div>
+          <div class="row"><span class="n">12</span><span class="u">/ 24 本</span><span class="pr">进度 50% · 领先时间表 9%</span></div>
+          <div class="track"><i></i></div>
+          <div class="marks"><span>1 月</span><span>进度 50%</span><span>12 月</span></div>
+        </div>
+
+        <div class="section-title"><h3>我的徽章</h3><a id="allBadges">全部 24 枚 ›</a></div>
+        <div class="badge-grid" id="badgeGrid">
+          <div class="badge got"><div class="b-ico">🔥</div><div class="b-nm">廿日不辍</div></div>
+          <div class="badge got"><div class="b-ico">🌙</div><div class="b-nm">夜读 30 天</div></div>
+          <div class="badge got"><div class="b-ico">📚</div><div class="b-nm">破卷十二</div></div>
+          <div class="badge got"><div class="b-ico">✒️</div><div class="b-nm">笔记 80 条</div></div>
+          <div class="badge not"><div class="b-ico">🏅<span class="lock">🔒</span></div><div class="b-nm">百日长跑</div></div>
+          <div class="badge not"><div class="b-ico">🌅<span class="lock">🔒</span></div><div class="b-nm">晨读 7 天</div></div>
+          <div class="badge not"><div class="b-ico">🦉<span class="lock">🔒</span></div><div class="b-nm">夜猫子 41</div></div>
+          <div class="badge not"><div class="b-ico">🏛<span class="lock">🔒</span></div><div class="b-nm">全勤一月</div></div>
+        </div>
+
+        <div class="set-list">
+          <div class="set-item"><span class="s-ico" style="background:var(--primary-soft)">⏰</span>每日阅读提醒<div class="switch on" data-switch></div></div>
+          <div class="set-item"><span class="s-ico" style="background:var(--green-soft)">🎯</span>每日目标时长<span class="val" id="goalVal">30 分钟</span><span class="arrow">›</span></div>
+          <div class="set-item" id="makeupItem"><span class="s-ico" style="background:var(--amber-soft)">🔖</span>补签卡<span class="val">剩余 2 张</span><span class="arrow">›</span></div>
+          <div class="set-item"><span class="s-ico" style="background:#E7E3F4">📊</span>阅读周报订阅<div class="switch on" data-switch></div></div>
+          <div class="set-item" id="aboutItem"><span class="s-ico" style="background:#E3EBF0">⚙️</span>关于阅迹<span class="val">V1.0</span><span class="arrow">›</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ 加书弹层 ══════ -->
+    <div class="sheet-mask" id="sheetMask"></div>
+    <div class="sheet" id="addSheet">
+      <div class="grab"></div>
+      <h3>添加图书</h3>
+      <div class="form-item"><label>书名</label><input id="inTitle" placeholder="例如：卡拉马佐夫兄弟" maxlength="30"></div>
+      <div class="form-item"><label>作者</label><input id="inAuthor" placeholder="例如：陀思妥耶夫斯基" maxlength="30"></div>
+      <div class="form-item"><label>总页数</label><input id="inPages" type="number" placeholder="例如：960" min="1" max="99999"></div>
+      <div class="form-item"><label>状态</label>
+        <select id="inStatus"><option value="READING">在读</option><option value="WISH">想读</option></select>
+      </div>
+      <button class="btn-primary" id="btnAddBook" style="margin-top:6px">加入书架</button>
+    </div>
+
+    <!-- 演示提示 -->
+    <div class="demo-banner"><span>可交互原型 · 点击底部 Tab 与各处按钮体验完整打卡流程</span></div>
+
+    <!-- ══════ Tab Bar ══════ -->
+    <nav class="tabbar">
+      <div class="tab on" data-tab="scr-home">
+        <svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>今日
+      </div>
+      <div class="tab" data-tab="scr-shelf">
+        <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>书架
+      </div>
+      <div class="tab" data-tab="scr-comm">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.5 2.8-5.5 5.5-5.5s4.9 2 5.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.8 14.6c2.3.2 4 2 4.5 4.9"/></svg>社区
+      </div>
+      <div class="tab" data-tab="scr-me">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1-4.2 4-6.5 7.5-6.5s6.5 2.3 7.5 6.5"/></svg>我的
+      </div>
+    </nav>
+
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script>
+/* ================= 状态 ================= */
+const state = {
+  todayMin: 18,        // 今日已累计分钟
+  goal: 30,
+  streak: 23,
+  checkedIn: false,
+  timer: { sec: 0, running: false, handle: null },
+  lastReadMin: 0,
+};
+
+/* ================= 屏幕导航 ================= */
+const tabbarEl = document.querySelector('.tabbar');
+const screens = ['scr-home','scr-stats','scr-shelf','scr-timer','scr-done','scr-comm','scr-me'];
+const TAB_SCREENS = ['scr-home','scr-shelf','scr-comm','scr-me'];
+
+function showScreen(id, opts = {}) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  el.querySelector('.scroll-area')?.scrollTo(0, 0);
+  // Tab bar：计时/完成页隐藏
+  const hideTab = (id === 'scr-timer' || id === 'scr-done');
+  tabbarEl.style.display = hideTab ? 'none' : 'flex';
+  // Tab 高亮
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('on', t.dataset.tab === id);
+  });
+  if (id === 'scr-done') playSeal();
+}
+
+document.addEventListener('click', e => {
+  const nav = e.target.closest('[data-nav]');
+  if (nav) { showScreen(nav.dataset.nav); return; }
+  const tab = e.target.closest('[data-tab]');
+  if (tab) showScreen(tab.dataset.tab);
+});
+
+/* ================= Toast ================= */
+const toastEl = document.getElementById('toast');
+let toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+
+/* ================= 时钟 ================= */
+function tickClock() {
+  const d = new Date();
+  const h = String(d.getHours()).padStart(2,'0');
+  const m = String(d.getMinutes()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}`;
+  const wd = ['日','一','二','三','四','五','六'][d.getDay()];
+  document.getElementById('todayDate').textContent = `${d.getMonth()+1}月${d.getDate()}日 · 周${wd}`;
+}
+tickClock(); setInterval(tickClock, 30000);
+
+/* ================= 计时器 ================= */
+const mmEl = document.getElementById('timerMm'), ssEl = document.getElementById('timerSs');
+function renderTimer() {
+  mmEl.textContent = String(Math.floor(state.timer.sec / 60)).padStart(2,'0');
+  ssEl.textContent = String(state.timer.sec % 60).padStart(2,'0');
+  const total = state.todayMin + Math.floor(state.timer.sec / 60);
+  const remain = Math.max(0, state.goal - total);
+  document.getElementById('timerGoal').textContent =
+    remain > 0 ? `再读 ${remain} 分钟即达成今日目标` : '🎉 已达成今日目标，继续保持！';
+}
+document.getElementById('btnStart').addEventListener('click', () => {
+  state.timer.sec = 0; state.timer.running = true;
+  renderTimer();
+  clearInterval(state.timer.handle);
+  state.timer.handle = setInterval(() => {
+    if (state.timer.running) { state.timer.sec++; renderTimer(); }
+  }, 1000);
+  showScreen('scr-timer');
+});
+document.getElementById('btnPause').addEventListener('click', () => {
+  state.timer.running = !state.timer.running;
+  document.getElementById('pauseTxt').textContent = state.timer.running ? '暂停' : '继续';
+  document.getElementById('btnPause').firstChild.textContent = state.timer.running ? '⏸' : '▶';
+  toast(state.timer.running ? '继续阅读，保持专注 📖' : '已暂停计时');
+});
+document.getElementById('btnFinish').addEventListener('click', () => {
+  clearInterval(state.timer.handle);
+  state.timer.running = false;
+  // 演示：不足 1 分钟按 12 分钟计
+  const sessionMin = Math.max(1, Math.floor(state.timer.sec / 60));
+  state.lastReadMin = sessionMin;
+  state.todayMin += sessionMin;
+  if (!state.checkedIn) {
+    state.checkedIn = true;
+    state.streak += 1;
+  }
+  // 回填今日数据
+  document.getElementById('todayMin').textContent = `${state.todayMin} 分钟`;
+  document.getElementById('goalNow').textContent = state.todayMin;
+  document.getElementById('goalFill').style.width = Math.min(100, state.todayMin / state.goal * 100) + '%';
+  document.getElementById('todayBarMin').textContent = state.todayMin;
+  document.getElementById('todayBar').style.height = Math.min(64, Math.round(state.todayMin * 1.4)) + 'px';
+  document.getElementById('streakNum').textContent = state.streak;
+  document.getElementById('streakBig').textContent = state.streak;
+  document.getElementById('myRankDays').innerHTML = `${state.streak} <small>天</small>`;
+  document.getElementById('doneMin').innerHTML = `${state.todayMin} 分钟 · 约 ${Math.round(sessionMin * 1.2) + 36} 页`;
+  document.getElementById('doneStreak').textContent = `${state.streak} 天`;
+  document.getElementById('sparkMin').textContent = `+${sessionMin}`;
+  document.getElementById('sparkStreak').textContent = state.streak;
+  markTodayCell();
+  showScreen('scr-done');
+});
+
+/* ================= 打卡完成页 ================= */
+function playSeal() {
+  const seal = document.getElementById('seal');
+  seal.classList.remove('pop'); void seal.offsetWidth; seal.classList.add('pop');
+}
+// 心情
+document.getElementById('moodRow').addEventListener('click', e => {
+  const m = e.target.closest('.mood'); if (!m) return;
+  document.querySelectorAll('#moodRow .mood').forEach(x => x.classList.remove('on'));
+  m.classList.add('on');
+});
+// 星级
+document.getElementById('starRow').addEventListener('click', e => {
+  const s = e.target.closest('.star'); if (!s) return;
+  const stars = [...document.querySelectorAll('#starRow .star')];
+  const idx = stars.indexOf(s);
+  stars.forEach((x, i) => x.classList.toggle('on', i <= idx));
+});
+// 发布
+document.getElementById('btnPublish').addEventListener('click', () => {
+  const mood = document.querySelector('#moodRow .mood.on')?.dataset.mood || '沉思';
+  const note = document.getElementById('noteInput').value.trim() || '今天也在书页里走了很远。';
+  const starCnt = document.querySelectorAll('#starRow .star.on').length;
+  const item = document.createElement('div');
+  item.className = 'feed-item new';
+  item.innerHTML = `
+    <div class="f-ava a1">拾</div>
+    <div class="f-body">
+      <div class="f-head"><span class="nm">拾页人</span><span class="lv">Lv.4 拾页人</span><span class="tm">刚刚</span></div>
+      <div class="f-text">${escapeHtml(note)} <span style="font-size:11px;color:var(--ink-faint)">（心情：${mood} · 评分 ${'★'.repeat(starCnt)}）</span></div>
+      <div class="f-quote">${escapeHtml(document.getElementById('quoteBox').textContent.replace(/["“”]/g,''))}<span class="src">— 《百年孤独》 P312</span></div>
+      <div class="f-book"><span class="mini-c bc-1"></span>百年孤独 · 今日 ${state.lastReadMin} 分钟</div>
+      <div class="f-meta">
+        <span class="act zan" data-like>♥ <b>0</b></span>
+        <span class="act" data-comment>💬 0</span>
+        <span class="act" data-collect>⤴ 收藏</span>
+      </div>
+    </div>`;
+  document.getElementById('feedList').prepend(item);
+  toast('已发布到共读圈 🎉 +15 书页积分');
+  setTimeout(() => showScreen('scr-comm'), 600);
+});
+document.getElementById('btnPrivate').addEventListener('click', () => {
+  toast('已存入笔记 · 共 87 条 ✒️');
+  setTimeout(() => showScreen('scr-home'), 600);
+});
+
+/* ================= 社区交互 ================= */
+document.getElementById('commTabs').addEventListener('click', e => {
+  const t = e.target.closest('.comm-tab'); if (!t) return;
+  document.querySelectorAll('#commTabs .comm-tab').forEach(x => x.classList.remove('on'));
+  t.classList.add('on');
+  document.getElementById('pane-feed').style.display = t.dataset.pane === 'feed' ? '' : 'none';
+  document.getElementById('pane-rank').style.display = t.dataset.pane === 'rank' ? '' : 'none';
+});
+document.addEventListener('click', e => {
+  const like = e.target.closest('[data-like]');
+  if (like) {
+    const b = like.querySelector('b');
+    const liked = like.classList.toggle('on');
+    b.textContent = parseInt(b.textContent) + (liked ? 1 : -1);
+    return;
+  }
+  if (e.target.closest('[data-comment]')) { toast('评论功能开发中 💬'); return; }
+  if (e.target.closest('[data-collect]')) { toast('已收藏到摘录本 ⤴'); return; }
+  if (e.target.closest('[data-congrats]')) { toast('已送出祝贺 🏅'); return; }
+});
+
+/* ================= 书架 ================= */
+document.getElementById('shelfTabs').addEventListener('click', e => {
+  const t = e.target.closest('.shelf-tab'); if (!t) return;
+  document.querySelectorAll('#shelfTabs .shelf-tab').forEach(x => x.classList.remove('on'));
+  t.classList.add('on');
+  const st = t.dataset.status;
+  document.querySelectorAll('#shelfGrid .shelf-card').forEach(c => {
+    c.style.display = (c.dataset.status === st) ? '' : 'none';
+  });
+});
+document.getElementById('shelfGrid').addEventListener('click', e => {
+  const c = e.target.closest('.shelf-card'); if (!c) return;
+  toast(`《${c.dataset.book}》详情页开发中`);
+});
+// 初始化只显示“在读”
+document.querySelectorAll('#shelfGrid .shelf-card').forEach(c => {
+  c.style.display = c.dataset.status === 'READING' ? '' : 'none';
+});
+// 加书弹层
+const sheetMask = document.getElementById('sheetMask'), addSheet = document.getElementById('addSheet');
+function openSheet() { sheetMask.classList.add('show'); addSheet.classList.add('show'); }
+function closeSheet() { sheetMask.classList.remove('show'); addSheet.classList.remove('show'); }
+document.getElementById('fabAdd').addEventListener('click', openSheet);
+sheetMask.addEventListener('click', closeSheet);
+document.getElementById('btnAddBook').addEventListener('click', () => {
+  const title = document.getElementById('inTitle').value.trim();
+  const author = document.getElementById('inAuthor').value.trim();
+  const pages = document.getElementById('inPages').value.trim();
+  const status = document.getElementById('inStatus').value;
+  if (!title || !author || !pages) { toast('请填写完整的书名、作者与页数'); return; }
+  const bcs = ['bc-1','bc-2','bc-3','bc-4','bc-5','bc-6'];
+  const bc = bcs[Math.floor(Math.random() * bcs.length)];
+  const card = document.createElement('div');
+  card.className = 'shelf-card'; card.dataset.status = status; card.dataset.book = title;
+  card.innerHTML = `
+    <div class="cover-wrap"><div class="book-cover ${bc}"><span class="bt">${escapeHtml(title)}</span><span class="ba">${escapeHtml(author)}</span></div></div>
+    <h4>${escapeHtml(title)}</h4><div class="au">${escapeHtml(author)}</div>
+    <div class="mini-progress"><div class="mp-txt"><span>P0 / ${escapeHtml(pages)}</span><b>${status === 'READING' ? '0%' : '想读'}</b></div><div class="mini-track"><i style="width:0%"></i></div></div>`;
+  document.getElementById('shelfGrid').appendChild(card);
+  ['inTitle','inAuthor','inPages'].forEach(id => document.getElementById(id).value = '');
+  closeSheet();
+  toast(`《${title}》已加入书架 📚`);
+});
+
+/* ================= 我的 ================= */
+document.addEventListener('click', e => {
+  const sw = e.target.closest('[data-switch]');
+  if (sw) { sw.classList.toggle('on'); toast(sw.classList.contains('on') ? '已开启' : '已关闭'); }
+});
+document.getElementById('badgeGrid').addEventListener('click', e => {
+  const b = e.target.closest('.badge'); if (!b) return;
+  const nm = b.querySelector('.b-nm').textContent;
+  toast(b.classList.contains('got') ? `「${nm}」已获得 ✨` : `「${nm}」尚未解锁，继续加油`);
+});
+document.getElementById('makeupItem').addEventListener('click', () => toast('补签卡仅可补昨日缺卡 · 本月剩余 2 张 🔖'));
+document.getElementById('aboutItem').addEventListener('click', () => toast('阅迹 V1.0 · 可交互原型演示'));
+document.getElementById('allBadges').addEventListener('click', () => toast('徽章墙完整页开发中 🏅'));
+document.getElementById('btnReport').addEventListener('click', () => toast('周报已生成，可在消息中心查看 📊'));
+
+/* ================= 热力日历 ================= */
+const heatGrid = document.getElementById('heatGrid');
+(function buildHeat() {
+  // 5 周 × 7 天；周三为缺卡（空心），今天=第 35 格
+  const pattern = ['l3','l2','skip','l1','l4','l3','l2','l2','l1','skip','l3','l4','l4','l3','l1','l2','skip','l2','l3','l3','l4','l4','l3','skip','l1','l2','l3','l3','l2','l3','skip','l3','l4','l2','today','','','','','','',''];
+  const minutes = {l1:12,l2:25,l3:38,l4:52};
+  pattern.forEach(p => {
+    const c = document.createElement('span');
+    c.className = 'cell' + (p && p !== 'today' ? ' ' + p : '');
+    if (p === 'skip') { c.classList.add('skip'); c.title = '缺卡'; }
+    else if (minutes[p]) c.title = `阅读 ${minutes[p]} 分钟`;
+    if (p === 'today') { c.classList.add('today','l1'); c.id = 'todayCell'; c.title = '今天 · 阅读 18 分钟'; }
+    c.addEventListener('click', () => toast(c.title || '暂无记录'));
+    heatGrid.appendChild(c);
+  });
+})();
+function markTodayCell() {
+  const c = document.getElementById('todayCell');
+  if (c) { c.classList.remove('l1'); c.classList.add('l3'); c.title = `今天 · 已打卡 ${state.todayMin} 分钟`; }
+}
+
+/* ================= 工具 ================= */
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+</script>
+</body>
+</html>
