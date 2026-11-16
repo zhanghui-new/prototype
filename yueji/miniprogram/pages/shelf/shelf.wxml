@@ -1,0 +1,76 @@
+<view class="page shelf-page">
+  <view class="state-bar error" wx:if="{{loadError}}" bindtap="refresh">{{loadError}}</view>
+  <view class="state-bar" wx:elif="{{loading}}">正在从云端加载书架…</view>
+  <view class="state-bar" wx:if="{{notLoggedIn}}" bindtap="goLogin">登录后查看你的云端书架 · 去登录</view>
+
+  <view class="pg-title" style="padding-top: {{statusBarH}}px;">
+    <view class="h1">书架</view>
+    <view class="sub">在读 {{countReading}} · 想读 {{countWish}} · 读完 {{countDone}}</view>
+  </view>
+
+  <view class="shelf-tabs">
+    <view class="shelf-tab {{activeTab === 'READING' ? 'on' : ''}}" bindtap="switchTab" data-status="READING">在读 {{countReading}}</view>
+    <view class="shelf-tab {{activeTab === 'WISH' ? 'on' : ''}}" bindtap="switchTab" data-status="WISH">想读 {{countWish}}</view>
+    <view class="shelf-tab {{activeTab === 'DONE' ? 'on' : ''}}" bindtap="switchTab" data-status="DONE">读完 {{countDone}}</view>
+  </view>
+
+  <view class="shelf-grid">
+    <view class="shelf-card" wx:for="{{filtered}}" wx:key="id" bindtap="tapBook" data-id="{{item.id}}">
+      <view class="cover-wrap">
+        <view class="book-cover {{item.coverCls}}">
+          <text class="bt">{{item.title}}</text>
+          <text class="ba">{{item.author}}</text>
+        </view>
+        <view class="tag-abs" wx:if="{{item.tag}}">{{item.tag}}</view>
+      </view>
+      <view class="ttl">{{item.title}}</view>
+      <view class="au">{{item.author}}</view>
+      <view class="mini-progress">
+        <view class="mp-txt">
+          <text>{{item.progressText}}</text>
+          <text class="mp-r">{{item.progressRight}}</text>
+        </view>
+        <view class="mini-track">
+          <view class="mini-fill {{item.done ? 'g' : ''}}" style="width: {{item.pct}}%"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空态 -->
+  <view class="empty" wx:if="{{filtered.length === 0}}">
+    <view class="empty-ico">📚</view>
+    <view class="empty-txt">这个书架还是空的</view>
+    <view class="empty-sub">点右下角 ＋ 添加一本书吧</view>
+  </view>
+
+  <!-- FAB -->
+  <view class="fab" bindtap="openSheet">＋</view>
+
+  <!-- 加书弹层 -->
+  <view class="sheet-mask {{sheetShow ? 'show' : ''}}" bindtap="closeSheet"></view>
+  <view class="sheet {{sheetShow ? 'show' : ''}}">
+    <view class="grab"></view>
+    <view class="sheet-title">添加图书</view>
+    <view class="form-item">
+      <view class="label">书名</view>
+      <input class="input" placeholder="例如：卡拉马佐夫兄弟" maxlength="30" value="{{form.title}}" bindinput="onTitleInput" />
+    </view>
+    <view class="form-item">
+      <view class="label">作者</view>
+      <input class="input" placeholder="例如：陀思妥耶夫斯基" maxlength="30" value="{{form.author}}" bindinput="onAuthorInput" />
+    </view>
+    <view class="form-item">
+      <view class="label">总页数</view>
+      <input class="input" type="number" placeholder="例如：960" value="{{form.pages}}" bindinput="onPagesInput" />
+    </view>
+    <view class="form-item">
+      <view class="label">状态</view>
+      <view class="status-pick">
+        <view class="sp-opt {{form.status === 'READING' ? 'on' : ''}}" bindtap="pickStatus" data-status="READING">在读</view>
+        <view class="sp-opt {{form.status === 'WISH' ? 'on' : ''}}" bindtap="pickStatus" data-status="WISH">想读</view>
+      </view>
+    </view>
+    <button class="btn-primary sheet-btn" bindtap="addBook">加入书架</button>
+  </view>
+</view>

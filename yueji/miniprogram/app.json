@@ -1,0 +1,54 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/shelf/shelf",
+    "pages/community/community",
+    "pages/profile/profile",
+    "pages/stats/stats",
+    "pages/timer/timer",
+    "pages/done/done",
+    "pages/login/login"
+  ],
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#FAF6EF",
+    "navigationBarTitleText": "阅迹",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FAF6EF"
+  },
+  "tabBar": {
+    "color": "#9A9285",
+    "selectedColor": "#B4532A",
+    "backgroundColor": "#FAF6EF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "今日",
+        "iconPath": "images/tab/today.png",
+        "selectedIconPath": "images/tab/today-active.png"
+      },
+      {
+        "pagePath": "pages/shelf/shelf",
+        "text": "书架",
+        "iconPath": "images/tab/shelf.png",
+        "selectedIconPath": "images/tab/shelf-active.png"
+      },
+      {
+        "pagePath": "pages/community/community",
+        "text": "社区",
+        "iconPath": "images/tab/community.png",
+        "selectedIconPath": "images/tab/community-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/tab/profile.png",
+        "selectedIconPath": "images/tab/profile-active.png"
+      }
+    ]
+  },
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

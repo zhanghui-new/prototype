@@ -1,0 +1,41 @@
+<view class="done-screen">
+  <view class="state-bar error" wx:if="{{loadError}}" bindtap="refresh">{{loadError}}</view>
+  <view class="state-bar" wx:elif="{{loading}}">正在读取今日阅读数据…</view>
+
+  <view class="done-hero" style="padding-top: {{topPad}}px;">
+    <view class="seal {{popped ? 'pop' : ''}}">
+      <view class="tick">✓</view>
+    </view>
+    <view class="h1 serif">打卡成功</view>
+    <view class="sub">{{bookLabel}} <text class="b">{{totalMin}} 分钟 · {{pages}} 页</text>\n已连续打卡 <text class="b">{{streak}} 天</text>，继续把阅读长进生活里</view>
+    <view class="spark-row">
+      <view class="spark"><view class="v serif">+{{session}}</view><view class="k">今日分钟</view></view>
+      <view class="spark"><view class="v serif">+{{publishPoints}}</view><view class="k">书页积分</view></view>
+      <view class="spark"><view class="v serif">{{streak}}</view><view class="k">连续天数</view></view>
+    </view>
+  </view>
+
+  <view class="card note-card">
+    <view class="nq" wx:if="{{quoteText}}">“{{quoteText}}”<text class="src">{{quoteSrc}}</text></view>
+    <textarea class="note-input" maxlength="200" placeholder="写下今日感想（≤200 字）…" value="{{note}}" bindinput="onNoteInput"></textarea>
+    <view class="mood-row">
+      <view class="mood {{mood === '沉思' ? 'on' : ''}}" bindtap="pickMood" data-mood="沉思"><view class="face">🤔</view><text>沉思</text></view>
+      <view class="mood {{mood === '愉悦' ? 'on' : ''}}" bindtap="pickMood" data-mood="愉悦"><view class="face">😊</view><text>愉悦</text></view>
+      <view class="mood {{mood === '触动' ? 'on' : ''}}" bindtap="pickMood" data-mood="触动"><view class="face">😭</view><text>触动</text></view>
+      <view class="mood {{mood === '震撼' ? 'on' : ''}}" bindtap="pickMood" data-mood="震撼"><view class="face">🤯</view><text>震撼</text></view>
+      <view class="mood {{mood === '平静' ? 'on' : ''}}" bindtap="pickMood" data-mood="平静"><view class="face">😴</view><text>平静</text></view>
+    </view>
+    <view class="stars">
+      <text class="star {{star >= 1 ? 'on' : ''}}" bindtap="pickStar" data-star="1">★</text>
+      <text class="star {{star >= 2 ? 'on' : ''}}" bindtap="pickStar" data-star="2">★</text>
+      <text class="star {{star >= 3 ? 'on' : ''}}" bindtap="pickStar" data-star="3">★</text>
+      <text class="star {{star >= 4 ? 'on' : ''}}" bindtap="pickStar" data-star="4">★</text>
+      <text class="star {{star >= 5 ? 'on' : ''}}" bindtap="pickStar" data-star="5">★</text>
+    </view>
+  </view>
+
+  <view class="done-actions">
+    <button class="btn-primary" bindtap="publish" disabled="{{publishing}}">{{publishing ? '正在保存…' : '发布到社区 · 与书友共读'}}</button>
+    <button class="btn-ghost" bindtap="savePrivate" disabled="{{publishing}}">仅存入我的笔记</button>
+  </view>
+</view>

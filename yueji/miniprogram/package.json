@@ -1,0 +1,9 @@
+{
+  "name": "yueji-miniprogram",
+  "version": "1.0.0",
+  "description": "阅迹·读书打卡小程序（云服务版）",
+  "private": true,
+  "dependencies": {
+    "@tencent-ai/workbuddy-cloud-sdk": "dev"
+  }
+}

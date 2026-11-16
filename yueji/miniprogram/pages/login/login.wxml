@@ -1,0 +1,20 @@
+<view class="login-screen" style="padding-top: {{topPad}}px;">
+  <view class="brand">
+    <view class="logo">阅</view>
+    <view class="name serif">阅迹</view>
+    <view class="slogan">每天一刻钟，把日子过成一本书</view>
+  </view>
+
+  <!-- WorkBuddy 账号登录（推荐） -->
+  <button class="wb-login-btn" bindtap="onWorkBuddyLogin" loading="{{loggingIn}}" disabled="{{loggingIn}}">
+    使用 WorkBuddy 登录
+  </button>
+  <view class="wb-error" wx:if="{{loginError}}">{{loginError}}</view>
+
+  <view class="divider"><view class="line"></view><text class="txt">或使用邮箱验证码</text><view class="line"></view></view>
+
+  <!-- 邮箱验证码登录 / 注册 -->
+  <login-panel bind:signedin="onSignedIn"></login-panel>
+
+  <view class="privacy-note">登录即代表同意《用户协议》与《隐私政策》，你的阅读数据将安全地保存在云端</view>
+</view>

@@ -1,0 +1,121 @@
+.comm-tabs { display: flex; padding: 24rpx 40rpx 16rpx; gap: 48rpx; border-bottom: 2rpx solid var(--line); }
+.comm-tab {
+  font-size: 30rpx; color: var(--ink-faint); padding: 16rpx 4rpx; position: relative; font-weight: 500;
+}
+.comm-tab.on { color: var(--ink); font-weight: 700; }
+.comm-tab.on::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -3rpx; height: 5rpx;
+  border-radius: 3rpx; background: var(--primary);
+}
+
+.feed-item { display: flex; gap: 24rpx; padding: 32rpx 40rpx; }
+.feed-item + .feed-item { border-top: 2rpx solid var(--line); }
+.f-ava {
+  width: 80rpx; height: 80rpx; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30rpx; font-weight: 700; color: #FFF6EC; font-family: "STSong", serif;
+}
+.f-ava.a1 { background: linear-gradient(135deg, #B4532A, #8A3B1E); }
+.f-ava.a2 { background: linear-gradient(135deg, #2D6A4F, #1E4A36); }
+.f-ava.a3 { background: linear-gradient(135deg, #39586E, #21303E); }
+.f-ava.a4 { background: linear-gradient(135deg, #C98F2E, #8A6218); }
+
+.f-body { flex: 1; min-width: 0; }
+.f-head { display: flex; align-items: baseline; gap: 16rpx; }
+.f-head .nm { font-size: 28rpx; font-weight: 700; }
+.f-head .lv {
+  font-size: 20rpx; color: var(--green); background: var(--green-soft);
+  padding: 4rpx 14rpx; border-radius: 999rpx; font-weight: 600;
+}
+.f-head .tm { font-size: 21rpx; color: var(--ink-faint); margin-left: auto; }
+.f-text { font-size: 27rpx; line-height: 1.75; color: var(--ink-soft); margin-top: 14rpx; }
+.f-quote {
+  margin-top: 18rpx; padding: 20rpx 26rpx; background: var(--paper-deep); border-radius: 16rpx;
+  border-left: 5rpx solid var(--amber); font-size: 24rpx; line-height: 1.7; color: var(--ink-soft);
+  font-family: "STSong", serif;
+}
+.f-quote .src { display: block; margin-top: 10rpx; font-size: 21rpx; color: var(--ink-faint); }
+.f-book {
+  margin-top: 18rpx; display: inline-flex; align-items: center; gap: 16rpx;
+  background: var(--surface); border: 2rpx solid var(--line); border-radius: 999rpx;
+  padding: 10rpx 24rpx 10rpx 12rpx; font-size: 23rpx; color: var(--ink-soft);
+}
+.mini-c { width: 40rpx; height: 56rpx; border-radius: 8rpx; }
+
+.f-meta { display: flex; align-items: center; gap: 36rpx; margin-top: 22rpx; }
+.f-meta .act { display: flex; align-items: center; gap: 10rpx; font-size: 24rpx; color: var(--ink-faint); }
+.f-meta .act.on { color: var(--primary); font-weight: 600; }
+
+/* 排行榜 */
+.rank-top { display: flex; gap: 20rpx; padding: 36rpx 32rpx 20rpx; align-items: flex-end; }
+.rpod { flex: 1; text-align: center; }
+.rpod .crown { font-size: 40rpx; margin-bottom: 12rpx; }
+.p-ava {
+  width: 116rpx; height: 116rpx; border-radius: 50%; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40rpx; font-weight: 700; color: #FFF6EC; font-family: "STSong", serif;
+}
+.rpod.p1 .p-ava { width: 140rpx; height: 140rpx; box-shadow: 0 0 0 6rpx var(--amber); }
+.rpod.p2 .p-ava { box-shadow: 0 0 0 5rpx #B8B2A5; }
+.rpod.p3 .p-ava { box-shadow: 0 0 0 5rpx #C98A5E; }
+.rpod .nm { font-size: 25rpx; font-weight: 600; margin-top: 16rpx; }
+.rpod .days { font-size: 34rpx; font-weight: 900; margin-top: 8rpx; }
+.rpod.p1 .days { color: var(--amber); }
+.rpod.p2 .days { color: #8A857A; }
+.rpod.p3 .days { color: #C98A5E; }
+
+.rank-list { padding: 8rpx 40rpx 40rpx; }
+.rank-row { display: flex; align-items: center; gap: 24rpx; padding: 22rpx 8rpx; border-bottom: 2rpx solid var(--line); }
+.rank-row:last-child { border-bottom: none; }
+.rank-row .no { width: 44rpx; text-align: center; font-size: 26rpx; font-weight: 700; color: var(--ink-faint); }
+.rank-row .p-ava { width: 72rpx; height: 72rpx; font-size: 26rpx; }
+.rank-row .nm { font-size: 27rpx; font-weight: 500; }
+.me-tag {
+  font-size: 19rpx; color: var(--primary); background: var(--primary-soft);
+  padding: 3rpx 14rpx; border-radius: 999rpx; margin-left: 12rpx;
+}
+.rank-row .days { margin-left: auto; font-weight: 900; font-size: 30rpx; color: var(--ink-soft); }
+.rank-row .days .unit { font-weight: 400; font-size: 20rpx; color: var(--ink-faint); margin-left: 4rpx; }
+
+/* 金句高亮 / 心情评分后缀 */
+.f-text .hl { color: var(--primary); font-weight: 700; }
+.f-text .suffix { font-size: 21rpx; color: var(--ink-faint); margin-left: 8rpx; }
+
+/* 刚发布的动态：淡入高亮 */
+.feed-item.new {
+  background: linear-gradient(90deg, rgba(201, 143, 46, 0.13), rgba(201, 143, 46, 0) 70%);
+  animation: feed-in .8s ease both;
+}
+@keyframes feed-in {
+  from { opacity: 0; transform: translateY(-20rpx); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 附近共读 */
+.nearby-tip { padding: 28rpx 40rpx 8rpx; font-size: 22rpx; color: var(--ink-faint); }
+.nearby-card {
+  display: flex; align-items: center; gap: 24rpx; margin: 20rpx 40rpx 0;
+  background: var(--surface); border-radius: 24rpx; box-shadow: var(--shadow-card); padding: 28rpx;
+}
+.n-ava {
+  width: 96rpx; height: 96rpx; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34rpx; font-weight: 700; color: #FFF6EC; font-family: "STSong", serif;
+}
+.n-ava.a1 { background: linear-gradient(135deg, #B4532A, #8A3B1E); }
+.n-ava.a2 { background: linear-gradient(135deg, #2D6A4F, #1E4A36); }
+.n-ava.a3 { background: linear-gradient(135deg, #39586E, #21303E); }
+.n-ava.a4 { background: linear-gradient(135deg, #C98F2E, #8A6218); }
+.n-body { flex: 1; min-width: 0; }
+.n-head { display: flex; align-items: baseline; gap: 16rpx; }
+.n-head .nm { font-size: 29rpx; font-weight: 700; }
+.n-head .dist { font-size: 21rpx; color: var(--ink-faint); }
+.n-book { font-size: 24rpx; color: var(--ink-soft); margin-top: 8rpx; }
+.n-state { font-size: 21rpx; color: var(--ink-faint); margin-top: 6rpx; }
+.n-state.on { color: var(--green); font-weight: 600; }
+.n-btn {
+  flex-shrink: 0; font-size: 23rpx; color: var(--primary); font-weight: 600;
+  border: 2rpx solid var(--primary-soft); background: var(--primary-soft);
+  padding: 12rpx 22rpx; border-radius: 999rpx;
+}
+.nearby-foot { text-align: center; font-size: 21rpx; color: var(--ink-faint); padding: 40rpx 0 20rpx; }

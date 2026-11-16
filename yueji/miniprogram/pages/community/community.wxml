@@ -1,0 +1,104 @@
+<view class="page">
+  <view class="state-bar error" wx:if="{{loadError}}" bindtap="refresh">{{loadError}}</view>
+  <view class="state-bar" wx:elif="{{loading}}">正在加载共读圈…</view>
+
+  <view class="pg-title" style="padding-top: {{statusBarH}}px;">
+    <view class="h1">共读圈</view>
+    <view class="sub">今日 {{feedCount}} 条共读动态</view>
+  </view>
+
+  <view class="comm-tabs">
+    <view class="comm-tab {{pane === 'feed' ? 'on' : ''}}" bindtap="switchPane" data-pane="feed">好友动态</view>
+    <view class="comm-tab {{pane === 'rank' ? 'on' : ''}}" bindtap="switchPane" data-pane="rank">连续排行</view>
+    <view class="comm-tab {{pane === 'nearby' ? 'on' : ''}}" bindtap="switchPane" data-pane="nearby">附近共读</view>
+  </view>
+
+  <!-- 动态流 -->
+  <view wx:if="{{pane === 'feed'}}">
+    <view class="feed-item {{item.isNew ? 'new' : ''}}" wx:for="{{feed}}" wx:key="id" id="feed-{{item.id}}">
+      <view class="f-ava {{item.avaCls}}">{{item.avaText}}</view>
+      <view class="f-body">
+        <view class="f-head">
+          <text class="nm">{{item.name}}</text>
+          <text class="lv">{{item.level}}</text>
+          <text class="tm">{{item.time}}</text>
+        </view>
+        <view class="f-text">
+          <text class="hl serif" wx:if="{{item.hl}}">{{item.hl}} </text>{{item.text}}<text class="suffix" wx:if="{{item.suffix}}">{{item.suffix}}</text>
+        </view>
+        <view class="f-quote" wx:if="{{item.quote}}">
+          {{item.quote}}<text class="src">{{item.quoteSrc}}</text>
+        </view>
+        <view class="f-book" wx:if="{{item.book}}">
+          <view class="mini-c {{item.coverCls}}"></view>
+          {{item.book}}
+        </view>
+        <view class="f-meta">
+          <view class="act {{item.liked ? 'on' : ''}}" bindtap="toggleLike" data-id="{{item.id}}">♥ {{item.likes}}</view>
+          <view class="act" bindtap="comment">💬 {{item.comments}}</view>
+          <view class="act" bindtap="collect" wx:if="{{item.showCollect}}">⤴ 收藏</view>
+          <view class="act" bindtap="congrats" wx:if="{{item.showCongrats}}">🏅 祝贺</view>
+        </view>
+      </view>
+    </view>
+    <view class="empty-state" wx:if="{{!loading && feed.length === 0}}">
+      <text class="ico">🪶</text>还没有共读动态，完成一次打卡发布第一条吧
+    </view>
+  </view>
+
+  <!-- 排行榜：数据来自 leaderboard 接口，我的名次按真实连击重排 -->
+  <view wx:elif="{{pane === 'rank'}}">
+    <view class="rank-top" wx:if="{{podium.length >= 3}}">
+      <view class="rpod p2">
+        <view class="crown">🥈</view>
+        <view class="p-ava {{podium[1].avaCls}}">{{podium[1].avaText}}</view>
+        <view class="nm">{{podium[1].name}}</view>
+        <view class="days serif">{{podium[1].days}}</view>
+      </view>
+      <view class="rpod p1">
+        <view class="crown">👑</view>
+        <view class="p-ava {{podium[0].avaCls}}">{{podium[0].avaText}}</view>
+        <view class="nm">{{podium[0].name}}</view>
+        <view class="days serif">{{podium[0].days}}</view>
+      </view>
+      <view class="rpod p3">
+        <view class="crown">🥉</view>
+        <view class="p-ava {{podium[2].avaCls}}">{{podium[2].avaText}}</view>
+        <view class="nm">{{podium[2].name}}</view>
+        <view class="days serif">{{podium[2].days}}</view>
+      </view>
+    </view>
+    <view class="rank-list">
+      <view class="rank-row" wx:for="{{rankList}}" wx:key="id">
+        <text class="no">{{item.no}}</text>
+        <view class="p-ava {{item.avaCls}}">{{item.avaText}}</view>
+        <text class="nm">{{item.name}}<text class="me-tag" wx:if="{{item.me}}">我</text></text>
+        <text class="days serif">{{item.days}} <text class="unit">天</text></text>
+      </view>
+    </view>
+    <view class="empty-state" wx:if="{{!loading && podium.length < 3}}">
+      <text class="ico">🏅</text>榜单暂无数据
+    </view>
+  </view>
+
+  <!-- 附近共读：数据来自 nearby_readers 接口 -->
+  <view wx:else>
+    <view class="nearby-tip">同城书友 · 不获取你的位置信息</view>
+    <view class="nearby-card" wx:for="{{nearbyList}}" wx:key="id">
+      <view class="n-ava {{item.avaCls}}">{{item.avaText}}</view>
+      <view class="n-body">
+        <view class="n-head">
+          <text class="nm">{{item.name}}</text>
+          <text class="dist">{{item.distance}}</text>
+        </view>
+        <view class="n-book">正在读《{{item.book}}》</view>
+        <view class="n-state {{item.reading ? 'on' : ''}}">{{item.reading ? '● 正在打卡' : '· 今日已打卡'}}</view>
+      </view>
+      <view class="n-btn" bindtap="greet" data-name="{{item.name}}">打招呼</view>
+    </view>
+    <view class="nearby-foot" wx:if="{{nearbyList.length > 0}}">— 已展示附近 {{nearbyList.length}} 位书友 —</view>
+    <view class="empty-state" wx:if="{{!loading && nearbyList.length === 0}}">
+      <text class="ico">📍</text>附近暂时没有其他书友
+    </view>
+  </view>
+</view>

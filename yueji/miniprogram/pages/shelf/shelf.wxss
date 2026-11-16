@@ -1,0 +1,68 @@
+.shelf-page { padding-bottom: 220rpx; }
+
+.shelf-tabs { display: flex; gap: 16rpx; padding: 28rpx 40rpx 12rpx; }
+.shelf-tab {
+  padding: 14rpx 36rpx; border-radius: 999rpx; font-size: 27rpx; font-weight: 500;
+  color: var(--ink-soft); background: rgba(255, 255, 255, 0.7); border: 2rpx solid var(--line);
+}
+.shelf-tab.on { background: var(--ink); color: var(--paper); border-color: var(--ink); font-weight: 700; }
+
+.shelf-grid { display: flex; flex-wrap: wrap; gap: 32rpx 28rpx; padding: 24rpx 40rpx 40rpx; }
+.shelf-card { width: calc(50% - 14rpx); background: var(--surface); border-radius: 24rpx; box-shadow: var(--shadow-card); padding: 28rpx; }
+.cover-wrap { position: relative; }
+.shelf-card .book-cover { width: 100%; height: 304rpx; border-radius: 20rpx; }
+.shelf-card .book-cover .bt { font-size: 30rpx; }
+.tag-abs {
+  position: absolute; top: 16rpx; left: 16rpx; background: rgba(28, 26, 21, 0.78);
+  color: #F6EFDF; font-size: 20rpx; padding: 6rpx 18rpx; border-radius: 999rpx;
+}
+.shelf-card .ttl { font-size: 29rpx; font-weight: 700; margin: 24rpx 4rpx 6rpx; font-family: "STSong", serif; }
+.shelf-card .au { font-size: 22rpx; color: var(--ink-faint); margin: 0 4rpx; }
+.mini-progress { margin: 20rpx 4rpx 4rpx; }
+.mp-txt { display: flex; justify-content: space-between; font-size: 21rpx; color: var(--ink-soft); margin-bottom: 10rpx; }
+.mp-txt .mp-r { color: var(--primary); font-weight: 600; }
+.mini-track { height: 10rpx; background: var(--paper-deep); border-radius: 999rpx; overflow: hidden; }
+.mini-fill { display: block; height: 100%; border-radius: 999rpx; background: linear-gradient(90deg, #C05F33, #B4532A); }
+.mini-fill.g { background: linear-gradient(90deg, #3D8A68, #2D6A4F); }
+
+.fab {
+  position: fixed; right: 36rpx; bottom: 160rpx; width: 112rpx; height: 112rpx; border-radius: 32rpx;
+  background: linear-gradient(135deg, #C05F33, #A34A25); color: #FFF6EC; font-size: 52rpx;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 20rpx 48rpx rgba(180, 83, 42, 0.42); z-index: 40;
+}
+
+/* 空态 */
+.empty { text-align: center; padding: 120rpx 0; }
+.empty-ico { font-size: 88rpx; }
+.empty-txt { font-size: 30rpx; font-weight: 600; margin-top: 24rpx; }
+.empty-sub { font-size: 24rpx; color: var(--ink-faint); margin-top: 12rpx; }
+
+/* 弹层 */
+.sheet-mask {
+  position: fixed; inset: 0; background: rgba(28, 26, 21, 0.45); z-index: 150;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.sheet-mask.show { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); z-index: 160;
+  border-radius: 52rpx 52rpx 0 0; padding: 28rpx 44rpx 60rpx;
+  transform: translateY(105%); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.sheet.show { transform: translateY(0); }
+.grab { width: 80rpx; height: 9rpx; border-radius: 5rpx; background: var(--line); margin: 0 auto 36rpx; }
+.sheet-title { font-size: 38rpx; font-weight: 900; margin-bottom: 32rpx; font-family: "STSong", serif; }
+.form-item { margin-bottom: 28rpx; }
+.form-item .label { font-size: 25rpx; color: var(--ink-soft); font-weight: 500; margin-bottom: 14rpx; }
+.input {
+  height: 96rpx; border: 3rpx solid var(--line); border-radius: 20rpx;
+  background: var(--surface); padding: 0 28rpx; font-size: 29rpx; color: var(--ink);
+}
+.status-pick { display: flex; gap: 16rpx; }
+.sp-opt {
+  flex: 1; height: 88rpx; border-radius: 18rpx; border: 3rpx solid var(--line);
+  background: var(--surface); display: flex; align-items: center; justify-content: center;
+  font-size: 28rpx; color: var(--ink-soft);
+}
+.sp-opt.on { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); font-weight: 700; }
+.sheet-btn { margin-top: 12rpx; }

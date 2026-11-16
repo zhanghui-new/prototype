@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>阅迹 · 微信小程序源码</title>
+  <style>
+    :root {
+      --bg: #f3f6fa;
+      --card: #ffffff;
+      --text: #1f2a37;
+      --sub: #5b6573;
+      --muted: #8a94a6;
+      --line: #e7edf4;
+      --primary: #2563eb;
+      --primary-soft: #eff4ff;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.05);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(820px 380px at 6% -8%, rgba(37, 99, 235, 0.10), transparent 62%),
+        linear-gradient(180deg, #eef3f9, var(--bg) 46%, #eef2f8);
+      -webkit-font-smoothing: antialiased;
+    }
+    .shell { max-width: 900px; margin: 0 auto; padding: 56px 24px; }
+    .back { color: var(--sub); text-decoration: none; font-size: 13px; }
+    .back:hover { color: var(--primary); }
+    .head { margin: 26px 0 28px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 7px; height: 26px;
+      padding: 0 11px; border-radius: 999px; background: var(--primary-soft);
+      color: var(--primary); font-size: 12px; font-weight: 600;
+    }
+    .eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    h1 { margin: 16px 0 10px; font-size: 28px; line-height: 1.25; }
+    .lead { margin: 0; color: var(--sub); font-size: 14px; line-height: 1.75; }
+    .notice {
+      margin: 0 0 24px; padding: 14px 16px; border: 1px solid #f3dfc0;
+      border-radius: 12px; background: #fffaf0; color: #8a5a12; font-size: 13px; line-height: 1.7;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .item {
+      display: block; padding: 18px 20px; background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); box-shadow: var(--shadow); text-decoration: none; color: inherit;
+      transition: transform .18s ease, border-color .18s ease;
+    }
+    .item:hover { transform: translateY(-3px); border-color: #cfdcea; }
+    .item h2 { margin: 0 0 6px; font-size: 15px; }
+    .item p { margin: 0; color: var(--sub); font-size: 12px; line-height: 1.65; }
+    .foot { margin-top: 36px; color: var(--muted); font-size: 12px; }
+    .foot a { color: var(--sub); }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <a class="back" href="../">← 返回阅迹项目</a>
+    <header class="head">
+      <span class="eyebrow"><i></i>阅迹 · 读书打卡</span>
+      <h1>微信小程序源码存档</h1>
+      <p class="lead">原生微信小程序工程，页面全部通过 <code>utils/api.js</code> 从云端接口取数，覆盖首页、书架、共读圈、统计、计时、打卡完成、登录与个人中心。</p>
+    </header>
+
+    <div class="notice">这里是源码存档，不能直接在浏览器里运行。请用微信开发者工具导入本目录，或在小程序环境中体验。</div>
+
+    <section class="grid">
+      <a class="item" href="./app.json"><h2>app.json</h2><p>页面路由、tabBar 与窗口配置。</p></a>
+      <a class="item" href="./utils/api.js"><h2>utils/api.js</h2><p>统一接口层：概览、书架、打卡、动态、点赞、徽章、附近共读、金句与榜单。</p></a>
+      <a class="item" href="./utils/cloud.js"><h2>utils/cloud.js</h2><p>云服务 SDK 单点初始化。</p></a>
+      <a class="item" href="./pages/home/home.wxml"><h2>pages/home/</h2><p>首页与今日阅读概览。</p></a>
+      <a class="item" href="./pages/timer/timer.wxml"><h2>pages/timer/</h2><p>阅读计时与打卡入口。</p></a>
+      <a class="item" href="./pages/community/community.wxml"><h2>pages/community/</h2><p>共读圈动态、附近共读与金句。</p></a>
+      <a class="item" href="./images/tab/today.png"><h2>images/tab/</h2><p>与 H5 一致的线性 Tab 图标资源。</p></a>
+      <a class="item" href="./scripts/gen-icons.js"><h2>scripts/gen-icons.js</h2><p>Tab 图标生成脚本。</p></a>
+    </section>
+
+    <div class="foot">源码随 <a href="https://github.com/zhanghui-new/prototype">设计原型集仓库</a> 一并存档。</div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<view class="page">
+  <view class="state-bar error" wx:if="{{loadError}}" bindtap="refresh">{{loadError}}</view>
+  <view class="state-bar" wx:elif="{{loading}}">正在同步你的阅读档案…</view>
+
+  <!-- 个人信息 -->
+  <view class="me-head" style="padding-top: {{statusBarH}}px;">
+    <view class="me-ava">{{avaText}}</view>
+    <view class="me-info">
+      <view class="nm serif">{{loggedIn ? nickname : '未登录'}}<text class="lv">{{level}}</text></view>
+      <view class="sig">{{signature}}</view>
+      <view class="me-stats">
+        <view class="me-stat">
+          <view class="v c1">{{totalHours}}<text class="u"> h</text></view>
+          <view class="k">累计时长</view>
+        </view>
+        <view class="me-stat">
+          <view class="v c2">{{booksDone}}<text class="u"> 本</text></view>
+          <view class="k">读完</view>
+        </view>
+        <view class="me-stat">
+          <view class="v c3">{{noteCount}}<text class="u"> 条</text></view>
+          <view class="k">笔记</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 登录状态 -->
+  <view class="login-bar" wx:if="{{!loggedIn}}" bindtap="goLogin">
+    <view class="login-bar-txt">登录后云端同步你的书架与打卡记录</view>
+    <view class="login-bar-btn">去登录</view>
+  </view>
+  <view class="login-bar" wx:else bindtap="signOut">
+    <view class="login-bar-txt">已登录 · {{userName}}</view>
+    <view class="login-bar-btn">退出</view>
+  </view>
+
+  <!-- 年度计划 -->
+  <view class="year-card">
+    <view class="cap">{{yearText}} · 年度阅读计划</view>
+    <view class="row">
+      <text class="n serif">{{booksDone}}</text>
+      <text class="u">/ {{yearGoal}} 本</text>
+      <text class="pr">进度 {{yearPct}}% · {{points}} 书页积分</text>
+    </view>
+    <view class="track"><view class="fill" style="width: {{yearPct}}%"></view></view>
+    <view class="marks"><text>1 月</text><text>进度 {{yearPct}}%</text><text>12 月</text></view>
+  </view>
+
+  <!-- 徽章：定义来自 badges 表，解锁状态按真实统计判定 -->
+  <view class="section-title">
+    <text class="t">我的徽章</text>
+    <text class="more" bindtap="allBadges">全部 {{badgeCount}} 枚 ›</text>
+  </view>
+  <view class="badge-grid">
+    <view class="badge {{item.got ? 'got' : ''}}" wx:for="{{badges}}" wx:key="id" bindtap="tapBadge"
+      data-name="{{item.name}}" data-got="{{item.got}}" data-progress="{{item.progress}}" data-description="{{item.description}}">
+      <view class="b-ico">{{item.icon}}<view class="lock" wx:if="{{!item.got}}">🔒</view></view>
+      <view class="b-nm">{{item.name}}</view>
+    </view>
+  </view>
+  <view class="empty-state" wx:if="{{!loading && badges.length === 0}}">
+    <text class="ico">🏅</text>暂无徽章数据
+  </view>
+
+  <!-- 设置 -->
+  <view class="set-list">
+    <view class="set-item" bindtap="toggleRemind">
+      <view class="s-ico i1">⏰</view>
+      <text>每日阅读提醒</text>
+      <view class="switch {{remindOn ? 'on' : ''}}"></view>
+    </view>
+    <view class="set-item" bindtap="editGoal">
+      <view class="s-ico i2">🎯</view>
+      <text>每日目标时长</text>
+      <text class="val">{{goalMin}} 分钟</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="set-item" bindtap="makeup">
+      <view class="s-ico i3">🔖</view>
+      <text>补签卡</text>
+      <text class="val">剩余 {{makeupCards}} 张</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="set-item" bindtap="toggleReport">
+      <view class="s-ico i4">📊</view>
+      <text>阅读周报订阅</text>
+      <view class="switch {{reportOn ? 'on' : ''}}"></view>
+    </view>
+    <view class="set-item" bindtap="about">
+      <view class="s-ico i5">⚙️</view>
+      <text>关于阅迹</text>
+      <text class="val">V1.0</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,159 @@
+/* 全局设计变量：纸墨人文 */
+page {
+  --paper: #FAF6EF;
+  --paper-deep: #F3EDE1;
+  --ink: #1C1A15;
+  --ink-soft: #5C564A;
+  --ink-faint: #9A9285;
+  --primary: #B4532A;
+  --primary-deep: #A34A25;
+  --primary-soft: #F3DFD4;
+  --green: #2D6A4F;
+  --green-soft: #DDEAE3;
+  --amber: #C98F2E;
+  --amber-soft: #F6E9CF;
+  --line: #E8E0D0;
+  --surface: #FFFFFF;
+  --shadow-card: 0 2px 6px rgba(60, 50, 30, 0.05), 0 6px 20px rgba(60, 50, 30, 0.07);
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.5;
+}
+
+view, text, button, input, textarea {
+  box-sizing: border-box;
+}
+
+/* 通用容器 */
+.page {
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+}
+
+.serif {
+  font-family: "STSong", "Noto Serif SC", "Songti SC", serif;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: 24rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.btn-primary {
+  height: 104rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, #C05F33, #B4532A);
+  color: #FFF9F2;
+  font-size: 33rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12rpx 36rpx rgba(180, 83, 42, 0.35);
+}
+.btn-primary::after { border: none; }
+
+.btn-ghost {
+  height: 96rpx;
+  border-radius: 20rpx;
+  background: transparent;
+  border: 3rpx solid var(--line);
+  color: var(--ink-soft);
+  font-size: 29rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-ghost::after { border: none; }
+
+/* 页面标题 */
+.pg-title {
+  padding: 24rpx 40rpx 8rpx;
+}
+.pg-title .h1 {
+  font-size: 52rpx;
+  font-weight: 900;
+  font-family: "STSong", "Noto Serif SC", serif;
+}
+.pg-title .sub {
+  font-size: 24rpx;
+  color: var(--ink-faint);
+  margin-top: 8rpx;
+}
+
+/* 区块标题 */
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 52rpx 40rpx 24rpx;
+}
+.section-title .t {
+  font-size: 34rpx;
+  font-weight: 700;
+  font-family: "STSong", "Noto Serif SC", serif;
+}
+.section-title .more {
+  font-size: 24rpx;
+  color: var(--ink-faint);
+}
+
+/* 自定义导航返回区 */
+.nav-back {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 40rpx 0;
+  gap: 24rpx;
+}
+.nav-back .back {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 22rpx;
+  border: 2rpx solid var(--line);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+  color: var(--ink-soft);
+}
+.nav-back .title {
+  font-size: 44rpx;
+  font-weight: 900;
+  font-family: "STSong", "Noto Serif SC", serif;
+}
+
+/* 书籍封面配色 */
+.bc-1 { background: linear-gradient(150deg, #7A3B1E, #B4532A 70%); }
+.bc-2 { background: linear-gradient(150deg, #1E3A2F, #2D6A4F 70%); }
+.bc-3 { background: linear-gradient(150deg, #5C4A1E, #C98F2E 70%); }
+.bc-4 { background: linear-gradient(150deg, #2B2B3A, #4A4A66 70%); }
+.bc-5 { background: linear-gradient(160deg, #3D2B1F, #8A5A33 70%); }
+.bc-6 { background: linear-gradient(160deg, #21303E, #39586E 70%); }
+
+/* 接口加载 / 错误 / 空态（所有页面统一） */
+.state-bar {
+  margin: 0 40rpx 12rpx;
+  padding: 18rpx 24rpx;
+  border-radius: 16rpx;
+  background: var(--paper-deep);
+  color: var(--ink-faint);
+  font-size: 24rpx;
+  text-align: center;
+}
+.state-bar.error {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.empty-state {
+  padding: 90rpx 40rpx;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 26rpx;
+}
+.empty-state .ico { font-size: 64rpx; display: block; margin-bottom: 20rpx; }

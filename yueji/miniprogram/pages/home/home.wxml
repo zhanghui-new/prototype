@@ -1,0 +1,94 @@
+<view class="page">
+  <view class="state-bar error" wx:if="{{loadError}}" bindtap="refresh">{{loadError}}</view>
+  <view class="state-bar" wx:elif="{{loading}}">正在同步阅读数据…</view>
+
+  <!-- 顶部问候 -->
+  <view class="head-row" style="padding-top: {{statusBarH}}px;">
+    <view class="hello">
+      <view class="date">{{dateText}}</view>
+      <view class="hi serif">{{greeting}}，<text class="em">{{nickname}}</text></view>
+    </view>
+    <view class="avatar" style="margin-right: {{menuRightGap}}px;" bindtap="goProfile">{{avaText}}</view>
+  </view>
+
+  <!-- 正在读 Hero：数据来自 books / checkins / quotes 接口 -->
+  <view class="hero" wx:if="{{currentBook}}" bindtap="goShelf">
+    <view class="hero-top">
+      <view class="book-cover {{currentBook.coverCls}}">
+        <text class="bt">{{currentBook.title}}</text>
+        <text class="ba">{{currentBook.author}}</text>
+      </view>
+      <view class="hero-info">
+        <view class="lab">正在读</view>
+        <view class="h2 serif">{{currentBook.title}}</view>
+        <view class="author">{{currentBook.author}} · {{currentBook.pageText}}</view>
+        <view class="hero-progress">
+          <view class="ring">
+            <view class="pct">{{currentBook.pct}}%</view>
+          </view>
+          <view class="txt">今日已读 <text class="b">{{todayMin}} 分钟</text>\n折合 <text class="b">{{todayPages}} 页</text></view>
+        </view>
+      </view>
+    </view>
+    <view class="hero-quote" wx:if="{{quoteText}}">“{{quoteText}}”<text class="src"> — 《{{quoteBook}}》</text></view>
+  </view>
+  <view class="card empty-state" wx:else bindtap="goShelf">
+    <text class="ico">📖</text>书架里还没有在读的书，去添加一本吧
+  </view>
+
+  <!-- 打卡区 -->
+  <view class="checkin-zone">
+    <view class="streak-strip" bindtap="goStats">
+      <view class="flame">
+        <text class="flame-ico">🔥</text>
+        <text class="n">{{streak}}</text>
+        <text class="t">天连续打卡</text>
+      </view>
+      <view class="best">历史最长 {{bestStreak}} 天\n距本月全勤还差 {{monthMissed}} 天</view>
+    </view>
+
+    <view class="goal-row">
+      <text class="gl">今日目标 {{goalMin}} 分钟</text>
+      <text class="gv"><text class="gnum">{{todayMin}}</text> / {{goalMin}} min</text>
+    </view>
+    <view class="goal-track">
+      <view class="fill" style="width: {{goalPct}}%"></view>
+    </view>
+
+    <button class="btn-primary" bindtap="startTimer" hover-class="btn-hover">
+      📖 开始今日阅读
+      <text class="hint">· {{remainText}}</text>
+    </button>
+  </view>
+
+  <!-- 数据速览 -->
+  <view class="stat-grid">
+    <view class="stat-cell c1" bindtap="goStats">
+      <view class="v">{{weekHours}}<text class="u">时</text></view>
+      <view class="k">本周阅读</view>
+    </view>
+    <view class="stat-cell c2" bindtap="goShelf">
+      <view class="v">{{booksDone}}<text class="u">本</text></view>
+      <view class="k">今年读完</view>
+    </view>
+    <view class="stat-cell c3" bindtap="goStats">
+      <view class="v">{{noteCount}}<text class="u">条</text></view>
+      <view class="k">摘录笔记</view>
+    </view>
+  </view>
+
+  <!-- 本周节奏 -->
+  <view class="section-title">
+    <text class="t">本周节奏</text>
+    <text class="more" bindtap="goStats">统计详情 ›</text>
+  </view>
+  <view class="card week-card">
+    <view class="week-bars">
+      <view class="wb" wx:for="{{weekBars}}" wx:key="day">
+        <text class="min">{{item.min}}</text>
+        <view class="bar {{item.cls}}" style="height: {{item.height}}rpx"></view>
+        <text class="d">{{item.day}}</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,53 @@
+<view class="page">
+  <view class="state-bar error" wx:if="{{loadError}}" bindtap="refresh">{{loadError}}</view>
+  <view class="state-bar" wx:elif="{{loading}}">正在统计你的阅读足迹…</view>
+
+  <view class="nav-back" style="padding-top: {{statusBarH}}px;">
+    <view class="back" bindtap="goBack">‹</view>
+    <view class="title">阅读足迹</view>
+  </view>
+
+  <!-- 连续打卡大卡 -->
+  <view class="big-streak">
+    <view class="row1"><text class="num serif">{{streak}}</text><text class="unit">天</text></view>
+    <view class="cap">连续打卡中 · 历史最长 {{bestStreak}} 天\n本月打卡率 {{ratePct}}%</view>
+    <view class="recents">
+      <text class="dot {{item.cls ? 'on' : ''}}" wx:for="{{weekBars}}" wx:key="day">{{item.day}}</text>
+    </view>
+  </view>
+
+  <!-- 热力日历：近 5 周逐日分钟数由 checkins 接口聚合 -->
+  <view class="card heat-wrap">
+    <view class="heat-head">
+      <text class="m serif">{{heatMonth}}</text>
+      <view class="legend">少 ▨▨▨▨ 多</view>
+    </view>
+    <view class="heat">
+      <view class="cell {{item.cls}}" wx:for="{{heat}}" wx:key="date" bindtap="tapCell" data-title="{{item.title}}"></view>
+    </view>
+    <view class="heat-days">
+      <text wx:for="{{recentDays}}" wx:key="*this">{{item}}</text>
+    </view>
+  </view>
+
+  <!-- 累计数据 -->
+  <view class="section-title"><text class="t">累计数据</text><text class="more" bindtap="exportReport">导出周报 ›</text></view>
+  <view class="card stat-rows">
+    <view class="srow">
+      <view class="l"><view class="ico i1">⏱</view>累计阅读时长</view>
+      <view class="r"><view class="rv c1 serif">{{totalHours}} <text class="u">h</text></view><view class="rk">日均 {{avgMinutes}} 分钟</view></view>
+    </view>
+    <view class="srow">
+      <view class="l"><view class="ico i2">📚</view>读完图书</view>
+      <view class="r"><view class="rv c2 serif">{{booksDone}} <text class="u">本</text></view><view class="rk">年度目标完成 {{yearPct}}%</view></view>
+    </view>
+    <view class="srow">
+      <view class="l"><view class="ico i3">✒️</view>摘录与笔记</view>
+      <view class="r"><view class="rv c3 serif">{{noteCount}} <text class="u">条</text></view><view class="rk">随每次打卡沉淀</view></view>
+    </view>
+    <view class="srow">
+      <view class="l"><view class="ico i4">🔥</view>打卡天数</view>
+      <view class="r"><view class="rv c4 serif">{{checkinDays}} <text class="u">天</text></view><view class="rk">本月打卡率 {{ratePct}}% · 缺卡 {{monthMissed}} 天</view></view>
+    </view>
+  </view>
+</view>

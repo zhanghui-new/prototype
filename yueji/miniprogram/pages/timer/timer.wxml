@@ -1,0 +1,27 @@
+<view class="timer-screen">
+  <view class="timer-top" style="padding-top: {{statusBarH}}px;">
+    <view class="back" bindtap="goBack">‹</view>
+    <view class="tip">锁屏或切出小程序时计时将自动暂停</view>
+  </view>
+
+  <view class="state-bar error" wx:if="{{loadError}}" bindtap="refresh">{{loadError}}</view>
+
+  <view class="timer-body">
+    <view class="book-cover {{currentBook.coverCls || 'bc-1'}} timer-book" wx:if="{{currentBook}}">
+      <text class="bt">{{currentBook.title}}</text>
+      <text class="ba">{{currentBook.author}}</text>
+    </view>
+    <view class="timer-label">专 注 阅 读 中</view>
+    <view class="timer-digits serif">{{mm}}<text class="dot">:</text>{{ss}}</view>
+    <view class="timer-sub">累计今日 {{totalMin}} 分钟 + 本次计时</view>
+    <view class="timer-goal">{{goalText}}</view>
+  </view>
+
+  <view class="timer-actions">
+    <view class="btn-round" bindtap="togglePause">
+      <text class="ico">{{running ? '⏸' : '▶'}}</text>
+      <text class="txt">{{running ? '暂停' : '继续'}}</text>
+    </view>
+    <button class="btn-finish" bindtap="finish">结束阅读 · 完成打卡</button>
+  </view>
+</view>
