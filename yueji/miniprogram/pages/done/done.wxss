@@ -29,9 +29,23 @@
 .spark .k { font-size: 20rpx; color: var(--ink-faint); margin-top: 4rpx; }
 
 .note-card { margin: 36rpx 40rpx 0; }
-.nq {
-  font-size: 26rpx; line-height: 1.8; color: var(--ink-soft); padding: 28rpx 32rpx;
-  background: var(--paper-deep); border-radius: 20rpx; font-family: "STSong", serif;
+.quote-edit {
+  padding: 24rpx 28rpx 20rpx;
+  background: var(--paper-deep); border-radius: 20rpx; border-left: 5rpx solid var(--amber);
+}
+.qe-hd { display: flex; align-items: center; gap: 14rpx; font-size: 23rpx; color: var(--ink-soft); font-weight: 700; }
+.qe-tag {
+  font-size: 19rpx; font-weight: 600; color: var(--amber);
+  background: var(--amber-soft); border-radius: 999rpx; padding: 2rpx 14rpx;
+}
+.quote-input {
+  width: 100%; min-height: 76rpx; margin-top: 14rpx;
+  font-size: 26rpx; line-height: 1.8; color: var(--ink); font-family: "STSong", serif;
+  background: transparent;
+}
+.quote-src-input {
+  width: 100%; margin-top: 6rpx; font-size: 21rpx; color: var(--ink-faint);
+  background: transparent;
 }
 .note-input {
   width: 100%; min-height: 128rpx; margin-top: 20rpx; border: 3rpx solid var(--line);

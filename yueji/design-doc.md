@@ -131,7 +131,7 @@ UserBook(id, user_id, book_id, status[READING/WISH/DONE],
          current_page, started_at, finished_at, rating)
 
 CheckIn(id, user_id, user_book_id, date, minutes, pages,
-        mood, star, quote_text, quote_page, note_text(≤200),
+        mood, star, quote_text, quote_src, note_text(≤200),
         share_scope[PRIVATE/CIRCLE], created_at)          -- 唯一键(user_id, date, user_book_id)
 
 StreakLog(user_id, date, type[NORMAL/MAKEUP], minutes)    -- 日粒度流水，热力图数据源
@@ -158,6 +158,8 @@ RoomCheckIn(id, room_id, owner_id, member_name, date, minutes, note, created_at)
 > 多人共读三表均为「公开读 + 本人写」：房间、成员、房间打卡对全部登录可见（用于成员互看进度），写入由 RLS 的 `owner_id = auth.uid()` 约束到本人；队长通过 `role=owner` 标识，仅队长可管理房间。小队每日打卡按 `(room_id, owner_id, date)` 幂等，同日再次打卡累加分钟。
 >
 > 个人信息由 `profiles` 表承载，「编辑个人信息」页写入 `nickname / signature / avatar_cls / year_goal`。新发布的动态与新加入的小队成员名优先取档案昵称，未填写时回退登录身份。原「附近共读」（`nearby_readers`）功能已下线，页面入口与接口方法均已移除。
+>
+> 好友动态只读取 `feeds` 表中用户真实发布的打卡动态，不内置任何演示数据；空表时展示空态。打卡成功页的读书摘要以云端 `quotes` 金句为初始值，用户可编辑文本与出处，随打卡写入 `checkins.quote_text / quote_src`，发布到共读圈时同步带入动态卡片。
 
 ---
 

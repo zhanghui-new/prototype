@@ -16,7 +16,13 @@
   </view>
 
   <view class="card note-card">
-    <view class="nq" wx:if="{{quoteText}}">“{{quoteText}}”<text class="src">{{quoteSrc}}</text></view>
+    <view class="quote-edit">
+      <view class="qe-hd">读书摘要 <text class="qe-tag">可编辑</text></view>
+      <textarea class="quote-input" maxlength="160" auto-height placeholder="摘录一句打动你的话…"
+        value="{{quoteText}}" bindinput="onQuoteInput"></textarea>
+      <input class="quote-src-input" maxlength="60" placeholder="— 《书名》 P页码"
+        value="{{quoteSrc}}" bindinput="onQuoteSrcInput" />
+    </view>
     <textarea class="note-input" maxlength="200" placeholder="写下今日感想（≤200 字）…" value="{{note}}" bindinput="onNoteInput"></textarea>
     <view class="mood-row">
       <view class="mood {{mood === '沉思' ? 'on' : ''}}" bindtap="pickMood" data-mood="沉思"><view class="face">🤔</view><text>沉思</text></view>

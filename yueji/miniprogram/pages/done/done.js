@@ -66,6 +66,15 @@ Page({
     this.setData({ note: e.detail.value });
   },
 
+  // 读书摘要由云端金句给出初始值，用户可在打卡前自由改写
+  onQuoteInput(e) {
+    this.setData({ quoteText: e.detail.value });
+  },
+
+  onQuoteSrcInput(e) {
+    this.setData({ quoteSrc: e.detail.value });
+  },
+
   goBack() {
     wx.navigateBack();
   },
@@ -78,7 +87,9 @@ Page({
       streak: this.data.streak,
       mood: this.data.mood,
       star: this.data.star,
-      note: this.data.note
+      note: this.data.note,
+      quoteText: this.data.quoteText,
+      quoteSrc: this.data.quoteSrc
     });
   },
 

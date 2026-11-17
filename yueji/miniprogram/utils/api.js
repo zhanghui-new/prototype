@@ -466,7 +466,9 @@ async function createCheckin(payload) {
     streak: Number(payload.streak) || 0,
     mood: payload.mood || '',
     star: Number(payload.star) || 0,
-    note: payload.note || ''
+    note: payload.note || '',
+    quoteText: payload.quoteText || '',
+    quoteSrc: payload.quoteSrc || ''
   };
   const { session } = await currentSession();
   if (!session) {

@@ -38,7 +38,7 @@ const booksTable = createTableAccess(cloud, {
 // 打卡记录表访问
 const checkinsTable = createTableAccess(cloud, {
   table: 'checkins',
-  columns: ['id', 'book_title', 'date', 'minutes', 'streak', 'mood', 'star', 'note', 'created_at'],
+  columns: ['id', 'book_title', 'date', 'minutes', 'streak', 'mood', 'star', 'note', 'quote_text', 'quote_src', 'created_at'],
   orderBy: { column: 'date', ascending: false },
   fromRow(row) {
     return {
@@ -49,7 +49,9 @@ const checkinsTable = createTableAccess(cloud, {
       streak: row.streak,
       mood: row.mood,
       star: row.star,
-      note: row.note
+      note: row.note,
+      quoteText: row.quote_text || '',
+      quoteSrc: row.quote_src || ''
     };
   },
   toRow(record) {
@@ -61,6 +63,8 @@ const checkinsTable = createTableAccess(cloud, {
     if (record.mood !== undefined) row.mood = record.mood;
     if (record.star !== undefined) row.star = record.star;
     if (record.note !== undefined) row.note = record.note;
+    if (record.quoteText !== undefined) row.quote_text = record.quoteText;
+    if (record.quoteSrc !== undefined) row.quote_src = record.quoteSrc;
     return row;
   }
 });
