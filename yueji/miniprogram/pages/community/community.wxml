@@ -11,6 +11,7 @@
     <view class="comm-tab {{pane === 'feed' ? 'on' : ''}}" bindtap="switchPane" data-pane="feed">好友动态</view>
     <view class="comm-tab {{pane === 'rank' ? 'on' : ''}}" bindtap="switchPane" data-pane="rank">连续排行</view>
     <view class="comm-tab {{pane === 'nearby' ? 'on' : ''}}" bindtap="switchPane" data-pane="nearby">附近共读</view>
+    <view class="comm-tab {{pane === 'rooms' ? 'on' : ''}}" bindtap="switchPane" data-pane="rooms">共读小队</view>
   </view>
 
   <!-- 动态流 -->
@@ -82,7 +83,7 @@
   </view>
 
   <!-- 附近共读：数据来自 nearby_readers 接口 -->
-  <view wx:else>
+  <view wx:elif="{{pane === 'nearby'}}">
     <view class="nearby-tip">同城书友 · 不获取你的位置信息</view>
     <view class="nearby-card" wx:for="{{nearbyList}}" wx:key="id">
       <view class="n-ava {{item.avaCls}}">{{item.avaText}}</view>
@@ -99,6 +100,48 @@
     <view class="nearby-foot" wx:if="{{nearbyList.length > 0}}">— 已展示附近 {{nearbyList.length}} 位书友 —</view>
     <view class="empty-state" wx:if="{{!loading && nearbyList.length === 0}}">
       <text class="ico">📍</text>附近暂时没有其他书友
+    </view>
+  </view>
+
+  <!-- 共读小队：多人一起读书打卡 -->
+  <view wx:else>
+    <view class="room-hero">
+      <view class="rh-title serif">一起读，走得更远</view>
+      <view class="rh-desc">约上书友组建小队，每日互相可见打卡进度</view>
+      <view class="rh-actions">
+        <view class="rh-btn solid" bindtap="goCreateRoom">＋ 创建小队</view>
+        <view class="rh-btn" bindtap="joinByCode">输入邀请码加入</view>
+      </view>
+    </view>
+
+    <view class="room-sec" wx:if="{{myRooms.length > 0}}">
+      <view class="room-sec-hd">我的小队 <text class="cnt">{{myRooms.length}}</text></view>
+      <view class="room-card mine" wx:for="{{myRooms}}" wx:key="id" bindtap="openRoom" data-id="{{item.id}}">
+        <view class="mini-c {{item.coverCls}}"></view>
+        <view class="rc-body">
+          <view class="rc-name">{{item.name}}<text class="badge-mine">已加入</text></view>
+          <view class="rc-book" wx:if="{{item.book}}">共读《{{item.book}}》</view>
+          <view class="rc-stat">{{item.memberCount}} 人 · 已坚持 {{item.checkedDays}}/{{item.goalDays}} 天</view>
+        </view>
+        <view class="rc-arrow">›</view>
+      </view>
+    </view>
+
+    <view class="room-sec">
+      <view class="room-sec-hd">发现小队 <text class="cnt">{{rooms.length}}</text></view>
+      <view class="room-card" wx:for="{{rooms}}" wx:key="id" bindtap="openRoom" data-id="{{item.id}}">
+        <view class="mini-c {{item.coverCls}}"></view>
+        <view class="rc-body">
+          <view class="rc-name">{{item.name}}</view>
+          <view class="rc-book" wx:if="{{item.book}}">共读《{{item.book}}》</view>
+          <view class="rc-stat">每日 {{item.goalMin}} 分钟 · {{item.memberCount}} 人参与</view>
+          <view class="rc-progress"><view class="rc-bar" style="width:{{item.checkedDays / item.goalDays * 100}}%"></view></view>
+        </view>
+        <view class="rc-arrow">›</view>
+      </view>
+      <view class="empty-state" wx:if="{{!loading && rooms.length === 0}}">
+        <text class="ico">📚</text>还没有小队，来创建第一个吧
+      </view>
     </view>
   </view>
 </view>

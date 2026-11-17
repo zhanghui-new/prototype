@@ -97,6 +97,25 @@ function createTableAccess(cloud, options) {
             });
         },
 
+        // 按单列等值过滤的列表查询；空结果不是错误，返回空数组。
+        // 供「按 room_id 取成员 / 打卡」这类关联读取使用。
+        listBy(column, value) {
+            if (typeof column !== 'string' || column.trim() === '') {
+                return Promise.resolve({ data: null, error: INVALID_PAYLOAD_ERROR });
+            }
+            return safely(async () => {
+                let query = from().select(selectedColumns).eq(column, value);
+                if (orderBy && typeof orderBy.column === 'string' && orderBy.column.trim() !== '') {
+                    query = query.order(orderBy.column, { ascending: orderBy.ascending !== false });
+                }
+                const result = await query;
+                return {
+                    data: asRows(result && result.data).map(fromRow),
+                    error: result ? result.error : null,
+                };
+            });
+        },
+
         create(payload) {
             return safely(async () => {
                 const row = toRow(payload);

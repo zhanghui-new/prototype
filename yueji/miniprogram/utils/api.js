@@ -141,6 +141,69 @@ const leaderboardTable = createTableAccess(cloud, {
   })
 });
 
+// 多人共读：房间 / 成员 / 房间打卡
+const roomsTable = createTableAccess(cloud, {
+  table: 'reading_rooms',
+  columns: ['id', 'owner_id', 'owner_name', 'name', 'book', 'cover_cls', 'goal_min', 'goal_days', 'max_members', 'invite_code', 'status', 'created_at'],
+  orderBy: { column: 'created_at', ascending: false },
+  fromRow: r => ({
+    id: r.id, ownerId: r.owner_id, ownerName: r.owner_name, name: r.name,
+    book: r.book, coverCls: r.cover_cls, goalMin: r.goal_min, goalDays: r.goal_days,
+    maxMembers: r.max_members, inviteCode: r.invite_code, status: r.status,
+    createdAt: r.created_at
+  }),
+  toRow: x => {
+    const row = {};
+    if (x.ownerName !== undefined) row.owner_name = x.ownerName;
+    if (x.name !== undefined) row.name = x.name;
+    if (x.book !== undefined) row.book = x.book;
+    if (x.coverCls !== undefined) row.cover_cls = x.coverCls;
+    if (x.goalMin !== undefined) row.goal_min = x.goalMin;
+    if (x.goalDays !== undefined) row.goal_days = x.goalDays;
+    if (x.maxMembers !== undefined) row.max_members = x.maxMembers;
+    if (x.inviteCode !== undefined) row.invite_code = x.inviteCode;
+    if (x.status !== undefined) row.status = x.status;
+    return row;
+  }
+});
+
+const roomMembersTable = createTableAccess(cloud, {
+  table: 'room_members',
+  columns: ['id', 'room_id', 'owner_id', 'member_name', 'ava_cls', 'role', 'joined_at'],
+  orderBy: { column: 'joined_at', ascending: true },
+  fromRow: r => ({
+    id: r.id, roomId: r.room_id, ownerId: r.owner_id, memberName: r.member_name,
+    avaCls: r.ava_cls, role: r.role, joinedAt: r.joined_at
+  }),
+  toRow: x => {
+    const row = {};
+    if (x.roomId !== undefined) row.room_id = x.roomId;
+    if (x.memberName !== undefined) row.member_name = x.memberName;
+    if (x.avaCls !== undefined) row.ava_cls = x.avaCls;
+    if (x.role !== undefined) row.role = x.role;
+    return row;
+  }
+});
+
+const roomCheckinsTable = createTableAccess(cloud, {
+  table: 'room_checkins',
+  columns: ['id', 'room_id', 'owner_id', 'member_name', 'date', 'minutes', 'note', 'created_at'],
+  orderBy: { column: 'created_at', ascending: false },
+  fromRow: r => ({
+    id: r.id, roomId: r.room_id, ownerId: r.owner_id, memberName: r.member_name,
+    date: r.date, minutes: r.minutes, note: r.note, createdAt: r.created_at
+  }),
+  toRow: x => {
+    const row = {};
+    if (x.roomId !== undefined) row.room_id = x.roomId;
+    if (x.memberName !== undefined) row.member_name = x.memberName;
+    if (x.date !== undefined) row.date = x.date;
+    if (x.minutes !== undefined) row.minutes = x.minutes;
+    if (x.note !== undefined) row.note = x.note;
+    return row;
+  }
+});
+
 // ---------------- 通用工具 ----------------
 async function listOf(table) {
   const { data, error } = await table.list();
@@ -160,6 +223,29 @@ function displayName(session) {
   const u = (session && (session.user || session)) || {};
   const raw = u.name || u.nickname || u.displayName || (u.email ? String(u.email).split('@')[0] : '');
   return raw || '书友';
+}
+
+// auth.uid() 在服务端由 session 推导；客户端只用它判断 UI 归属（是否房主/是否已加入），
+// 真正的权限边界仍由 RLS 的 owner_id = auth.uid() 保证。
+function currentUid(session) {
+  const u = (session && (session.user || session)) || {};
+  return String(u.id || u.uid || u.user_id || u.sub || '');
+}
+
+function avatarClass(seed) {
+  const classes = ['a1', 'a2', 'a3', 'a4'];
+  const s = String(seed || '');
+  let sum = 0;
+  for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i);
+  return classes[sum % classes.length];
+}
+
+// 生成 6 位易读邀请码（去掉易混淆字符）
+function makeInviteCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
 }
 
 function relativeTime(ts, now) {
@@ -533,6 +619,192 @@ async function getLeaderboard() {
   };
 }
 
+// ---------------- 多人共读小队 ----------------
+
+// 列出所有小队，附带每个小队的成员数与今日/累计打卡统计（全部来自云端记录）
+async function getRooms() {
+  const [{ session }, rs, ms, cs] = await Promise.all([
+    currentSession(), listOf(roomsTable), listOf(roomMembersTable), listOf(roomCheckinsTable)
+  ]);
+  const uid = currentUid(session);
+  const todayK = dateKey(new Date());
+  const rooms = rs.rows.map(r => {
+    const members = ms.rows.filter(m => String(m.roomId) === String(r.id));
+    const checks = cs.rows.filter(c => String(c.roomId) === String(r.id));
+    const todayChecks = checks.filter(c => c.date === todayK);
+    const totalMinutes = checks.reduce((s, c) => s + (Number(c.minutes) || 0), 0);
+    const checkedSet = new Set(checks.map(c => c.date));
+    const joined = members.some(m => uid && String(m.ownerId) === uid);
+    return {
+      id: r.id, name: r.name, book: r.book, coverCls: r.coverCls || 'bc-1',
+      ownerName: r.ownerName, goalMin: r.goalMin, goalDays: r.goalDays,
+      maxMembers: r.maxMembers, inviteCode: r.inviteCode, status: r.status,
+      memberCount: members.length,
+      todayChecked: todayChecks.length,
+      todayMinutes: todayChecks.reduce((s, c) => s + (Number(c.minutes) || 0), 0),
+      totalMinutes,
+      checkedDays: checkedSet.size,
+      joined,
+      isOwner: !!(uid && String(r.ownerId) === uid)
+    };
+  });
+  return {
+    data: { rooms, myRooms: rooms.filter(r => r.joined) },
+    error: rs.error || ms.error || cs.error || null,
+    needLogin: !session
+  };
+}
+
+// 小队详情：房间信息 + 成员及各自进度 + 当前用户角色
+async function getRoomDetail(roomId) {
+  const [{ session }, rs, ms, cs] = await Promise.all([
+    currentSession(),
+    roomsTable.listBy('id', Number(roomId)),
+    roomMembersTable.listBy('room_id', Number(roomId)),
+    roomCheckinsTable.listBy('room_id', Number(roomId))
+  ]);
+  const room = rs.data[0] || null;
+  if (!room) return { data: null, error: { message: '小队不存在或已被解散' } };
+  const uid = currentUid(session);
+  const todayK = dateKey(new Date());
+
+  const members = ms.data.map(m => {
+    const mine = cs.data.filter(c => String(c.ownerId) === String(m.ownerId));
+    const days = new Set(mine.map(c => c.date)).size;
+    const memberName = m.memberName || '书友';
+    return {
+      id: m.id, ownerId: m.ownerId, name: memberName,
+      initial: memberName.charAt(0),
+      avaCls: m.avaCls || 'a1', role: m.role,
+      isMe: !!(uid && String(m.ownerId) === uid),
+      days,
+      totalMinutes: mine.reduce((s, c) => s + (Number(c.minutes) || 0), 0),
+      todayMinutes: mine.filter(c => c.date === todayK).reduce((s, c) => s + (Number(c.minutes) || 0), 0),
+      todayDone: mine.some(c => c.date === todayK)
+    };
+  }).sort((a, b) => (b.days - a.days) || (b.totalMinutes - a.totalMinutes));
+
+  const totalMinutes = cs.data.reduce((s, c) => s + (Number(c.minutes) || 0), 0);
+  const allDays = new Set(cs.data.map(c => c.date));
+  const myCheckin = cs.data.find(c => uid && String(c.ownerId) === uid && c.date === todayK) || null;
+  const myMember = ms.data.find(m => uid && String(m.ownerId) === uid) || null;
+
+  return {
+    data: {
+      id: room.id, name: room.name, book: room.book, coverCls: room.coverCls,
+      ownerName: room.ownerName, goalMin: room.goalMin, goalDays: room.goalDays,
+      maxMembers: room.maxMembers, inviteCode: room.inviteCode, status: room.status,
+      ownerId: room.ownerId,
+      isOwner: !!(uid && String(room.ownerId) === uid),
+      joined: !!myMember,
+      members,
+      memberCount: members.length,
+      totalMinutes,
+      teamTodayMinutes: members.reduce((s, m) => s + m.todayMinutes, 0),
+      teamTodayDone: members.filter(m => m.todayDone).length,
+      checkedDays: allDays.size,
+      goalProgress: room.goalDays ? Math.min(100, Math.round(allDays.size / room.goalDays * 100)) : 0,
+      myTodayDone: !!myCheckin,
+      myTodayMinutes: myCheckin ? myCheckin.minutes : 0
+    },
+    error: rs.error || ms.error || cs.error || null,
+    needLogin: !session
+  };
+}
+
+// 创建小队：创建者自动成为队长成员
+async function createRoom(payload) {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录后创建' }, needLogin: true };
+  const name = displayName(session);
+  const rows = await listOf(roomsTable);
+  const used = new Set(rows.rows.map(r => r.inviteCode));
+  let code = makeInviteCode();
+  while (used.has(code)) code = makeInviteCode();
+  const goalMin = Math.max(5, Math.min(240, Number(payload.goalMin) || 30));
+  const goalDays = Math.max(1, Math.min(365, Number(payload.goalDays) || 21));
+  const created = await roomsTable.create({
+    name: String(payload.name || '').slice(0, 24) || '一起读书',
+    book: String(payload.book || '').slice(0, 60),
+    coverCls: payload.coverCls || 'bc-1',
+    goalMin, goalDays,
+    maxMembers: 12,
+    inviteCode: code,
+    ownerName: name,
+    status: 'active'
+  });
+  if (created.error || !created.data) return { data: null, error: created.error };
+  await roomMembersTable.create({
+    roomId: created.data.id, memberName: name, avaCls: avatarClass(currentUid(session)), role: 'owner'
+  });
+  return { data: created.data, error: null };
+}
+
+// 通过邀请码加入小队
+async function joinRoom(inviteCode) {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录后加入' }, needLogin: true };
+  const code = String(inviteCode || '').trim().toUpperCase();
+  if (!code) return { data: null, error: { message: '请输入邀请码' } };
+  const found = await roomsTable.listBy('invite_code', code);
+  const room = found.data[0];
+  if (!room) return { data: null, error: { message: '邀请码无效，请核对后重试' } };
+  if (room.status !== 'active') return { data: null, error: { message: '该小队已结束' } };
+
+  const membersRes = await roomMembersTable.listBy('room_id', room.id);
+  const uid = currentUid(session);
+  if (membersRes.data.some(m => uid && String(m.ownerId) === uid)) {
+    return { data: room, error: null, alreadyJoined: true };
+  }
+  if (membersRes.data.length >= (room.maxMembers || 12)) {
+    return { data: null, error: { message: '小队人数已满' } };
+  }
+  const created = await roomMembersTable.create({
+    roomId: room.id, memberName: displayName(session),
+    avaCls: avatarClass(uid), role: 'member'
+  });
+  if (created.error) return { data: null, error: created.error };
+  return { data: room, error: null };
+}
+
+// 退出小队（队长不可直接退出，避免小队孤儿）
+async function leaveRoom(roomId) {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录' }, needLogin: true };
+  const uid = currentUid(session);
+  const membersRes = await roomMembersTable.listBy('room_id', Number(roomId));
+  const mine = membersRes.data.find(m => uid && String(m.ownerId) === uid);
+  if (!mine) return { data: null, error: { message: '你还不是该小队成员' } };
+  if (mine.role === 'owner') return { data: null, error: { message: '队长暂不能退出，可转让后再离开' } };
+  const res = await roomMembersTable.remove(mine.id);
+  return { data: res.data, error: res.error || null };
+}
+
+// 小队每日打卡：同一天重复打卡则累加分钟（RLS 保证只写自己的记录）
+async function roomCheckin(roomId, minutes, note) {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录后打卡' }, needLogin: true };
+  const uid = currentUid(session);
+  if (!uid) return { data: null, error: { message: '登录信息尚未就绪，请稍后重试' } };
+  const todayK = dateKey(new Date());
+  const addMin = Math.max(1, Number(minutes) || 0);
+  const checksRes = await roomCheckinsTable.listBy('room_id', Number(roomId));
+  const mine = checksRes.data.find(c => String(c.ownerId) === uid && c.date === todayK);
+  if (mine) {
+    const res = await roomCheckinsTable.update(mine.id, {
+      minutes: (Number(mine.minutes) || 0) + addMin,
+      note: note || mine.note
+    });
+    return { data: res.data, error: res.error || null, appended: true };
+  }
+  const res = await roomCheckinsTable.create({
+    roomId: Number(roomId), memberName: displayName(session),
+    date: todayK, minutes: addMin, note: String(note || '').slice(0, 120)
+  });
+  if (!res.error) await addPoints(5);
+  return { data: res.data, error: res.error || null, appended: false };
+}
+
 module.exports = {
   // 会话
   currentSession,
@@ -548,8 +820,10 @@ module.exports = {
   getFeed, publishFeed, toggleFeedLike,
   // 我的 / 榜单
   getBadges, getNearby, getLeaderboard,
+  // 多人共读小队
+  getRooms, getRoomDetail, createRoom, joinRoom, leaveRoom, roomCheckin,
   // 常量（产品规则）
   PAGES_PER_MIN, PUBLISH_POINTS,
   // 底层表（供扩展）
-  tables: { profilesTable, feedsTable, feedLikesTable, badgesTable, nearbyTable, quotesTable, leaderboardTable, booksTable, checkinsTable }
+  tables: { profilesTable, feedsTable, feedLikesTable, badgesTable, nearbyTable, quotesTable, leaderboardTable, booksTable, checkinsTable, roomsTable, roomMembersTable, roomCheckinsTable }
 };

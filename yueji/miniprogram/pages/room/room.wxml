@@ -1,0 +1,95 @@
+<view class="page">
+  <view class="nav" style="padding-top: {{statusBarH}}px;">
+    <view class="nav-back" bindtap="goBack">‹</view>
+    <view class="nav-title serif">共读小队</view>
+    <view class="nav-slot"></view>
+  </view>
+
+  <view class="state-bar error" wx:if="{{loadError}}" bindtap="refresh">{{loadError}}</view>
+  <view class="state-bar" wx:elif="{{loading}}">正在加载小队…</view>
+
+  <block wx:if="{{detail && !loading}}">
+    <!-- 小队头部 -->
+    <view class="room-head">
+      <view class="rh-line">
+        <view class="mini-c big {{detail.coverCls}}"></view>
+        <view class="rh-info">
+          <view class="rh-name serif">{{detail.name}}</view>
+          <view class="rh-book" wx:if="{{detail.book}}">共读《{{detail.book}}》</view>
+          <view class="rh-owner">由 {{detail.ownerName}} 创建</view>
+        </view>
+      </view>
+      <view class="rh-metrics">
+        <view class="metric"><view class="m-num serif">{{detail.memberCount}}</view><view class="m-lb">成员</view></view>
+        <view class="metric"><view class="m-num serif">{{detail.checkedDays}}<text class="m-slash">/{{detail.goalDays}}</text></view><view class="m-lb">坚持天数</view></view>
+        <view class="metric"><view class="m-num serif">{{detail.totalMinutes}}</view><view class="m-lb">累计分钟</view></view>
+      </view>
+      <view class="goal-bar"><view class="goal-fill" style="width:{{detail.goalProgress}}%"></view></view>
+      <view class="goal-caption">距目标 {{detail.goalDays}} 天 · 已完成 {{detail.goalProgress}}%</view>
+    </view>
+
+    <!-- 邀请卡 -->
+    <view class="invite-card" wx:if="{{detail.joined}}">
+      <view class="ic-left">
+        <view class="ic-t">邀请书友加入</view>
+        <view class="ic-code serif">{{detail.inviteCode}}</view>
+      </view>
+      <view class="ic-actions">
+        <view class="ic-btn" bindtap="copyCode">复制邀请码</view>
+        <view class="ic-btn ghost" bindtap="shareRoom">邀请文案</view>
+      </view>
+    </view>
+
+    <!-- 今日打卡状态 -->
+    <view class="today-card {{detail.myTodayDone ? 'done' : ''}}">
+      <view class="tc-left">
+        <view class="tc-title">{{detail.myTodayDone ? '今日已打卡' : '今日还未打卡'}}</view>
+        <view class="tc-desc">{{detail.teamTodayDone}}/{{detail.memberCount}} 人已打卡 · 今日共读 {{detail.teamTodayMinutes}} 分钟</view>
+      </view>
+      <view class="tc-btn" wx:if="{{!detail.myTodayDone}}" bindtap="openCheckin">去打卡</view>
+      <view class="tc-check" wx:else>✓</view>
+    </view>
+
+    <!-- 成员进度 -->
+    <view class="members-sec">
+      <view class="sec-hd">成员进度 <text class="cnt">按坚持天数排序</text></view>
+      <view class="member-row" wx:for="{{detail.members}}" wx:key="id">
+        <view class="m-ava {{item.avaCls}}">{{item.initial}}</view>
+        <view class="m-body">
+          <view class="m-top">
+            <text class="m-name">{{item.name}}</text>
+            <text class="m-tag" wx:if="{{item.role === 'owner'}}">队长</text>
+            <text class="m-tag me" wx:if="{{item.isMe}}">我</text>
+            <text class="m-today {{item.todayDone ? 'on' : ''}}">{{item.todayDone ? '今日已打卡' : '今日未打卡'}}</text>
+          </view>
+          <view class="m-progress"><view class="m-fill" style="width:{{item.days / detail.goalDays * 100}}%"></view></view>
+          <view class="m-sub">坚持 {{item.days}} 天 · 累计 {{item.totalMinutes}} 分钟</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="leave-btn" wx:if="{{detail.joined && !detail.isOwner}}" bindtap="leave">退出小队</view>
+    <view class="bottom-space"></view>
+  </block>
+
+  <!-- 打卡弹层 -->
+  <view class="mask" wx:if="{{checkinOpen}}" bindtap="closeCheckin"></view>
+  <view class="sheet" wx:if="{{checkinOpen}}">
+    <view class="sheet-hd">
+      <text class="sheet-title serif">小队打卡</text>
+      <text class="sheet-close" bindtap="closeCheckin">×</text>
+    </view>
+    <view class="sheet-body">
+      <view class="field-label">本次阅读时长</view>
+      <view class="stepper">
+        <view class="step-btn" bindtap="minus">−</view>
+        <view class="step-val serif">{{minutes}} <text class="unit">分钟</text></view>
+        <view class="step-btn" bindtap="plus">＋</view>
+      </view>
+      <view class="field-label mt">留一句话 <text class="opt">选填</text></view>
+      <textarea class="note-input" placeholder="今天读到了哪里？" maxlength="120" bindinput="onNote" value="{{note}}"></textarea>
+      <view class="sheet-tip">同一天再次打卡会累加分钟数，完成后全队可见</view>
+      <view class="btn-primary sheet-submit {{submitting ? 'disabled' : ''}}" bindtap="submitCheckin">{{submitting ? '提交中…' : '完成打卡'}}</view>
+    </view>
+  </view>
+</view>

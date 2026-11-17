@@ -1,0 +1,44 @@
+<view class="page">
+  <view class="nav" style="padding-top: {{statusBarH}}px;">
+    <view class="nav-back" bindtap="goBack">‹</view>
+    <view class="nav-title serif">创建共读小队</view>
+    <view class="nav-slot"></view>
+  </view>
+
+  <view class="form">
+    <view class="field">
+      <view class="lb">小队名称</view>
+      <input class="input" placeholder="例如：晨读一刻 · 一起读完《活着》" maxlength="24" bindinput="onName" value="{{name}}" />
+      <view class="hint">{{name.length}}/24</view>
+    </view>
+
+    <view class="field">
+      <view class="lb">共读书目 <text class="opt">选填</text></view>
+      <input class="input" placeholder="这本书我们一起读" maxlength="60" bindinput="onBook" value="{{book}}" />
+    </view>
+
+    <view class="field">
+      <view class="lb">每日阅读目标</view>
+      <view class="stepper">
+        <view class="step-btn" bindtap="minusGoal">−</view>
+        <view class="step-val serif">{{goalMin}} <text class="unit">分钟</text></view>
+        <view class="step-btn" bindtap="plusGoal">＋</view>
+      </view>
+      <view class="hint">建议 15–60 分钟，量力而行更容易坚持</view>
+    </view>
+
+    <view class="field">
+      <view class="lb">坚持周期</view>
+      <view class="chips">
+        <view class="chip {{goalDays === item ? 'on' : ''}}" wx:for="{{dayOptions}}" wx:key="*this" bindtap="pickDays" data-days="{{item}}">{{item}} 天</view>
+      </view>
+    </view>
+
+    <view class="tip-card">
+      <view class="tip-t">邀请书友一起读</view>
+      <view class="tip-d">创建后自动生成 6 位邀请码，把邀请码发给朋友，对方在「共读小队」页输入即可加入。成员之间可互相看见每日打卡进度。</view>
+    </view>
+
+    <view class="btn-primary submit {{submitting ? 'disabled' : ''}}" bindtap="submit">{{submitting ? '创建中…' : '创建小队'}}</view>
+  </view>
+</view>

@@ -141,9 +141,19 @@ FeedPost(id, check_in_id, user_id, visible_scope, like_cnt, comment_cnt)
 Like / Comment / Follow(id, user_id, target_user_id, ...)
 
 PointLog(id, user_id, action, delta, created_at)
+
+-- 多人共读小队（云端实表：reading_rooms / room_members / room_checkins）
+ReadingRoom(id, owner_id, owner_name, name, book, cover_cls, goal_min,
+            goal_days, max_members, invite_code, status[active], created_at)
+RoomMember(id, room_id, owner_id, member_name, ava_cls, role[owner/member], joined_at)
+                                                       -- 唯一键(room_id, owner_id)
+RoomCheckIn(id, room_id, owner_id, member_name, date, minutes, note, created_at)
+                                                       -- 唯一键(room_id, owner_id, date)
 ```
 
 > 设计要点：`CheckIn` 按日幂等（唯一键），StreakLog 单独落日表，热力图 / 排行榜直接扫该表，避免实时聚合。
+>
+> 多人共读三表均为「公开读 + 本人写」：房间、成员、房间打卡对全部登录可见（用于成员互看进度），写入由 RLS 的 `owner_id = auth.uid()` 约束到本人；队长通过 `role=owner` 标识，仅队长可管理房间。小队每日打卡按 `(room_id, owner_id, date)` 幂等，同日再次打卡累加分钟。
 
 ---
 
@@ -161,6 +171,12 @@ PointLog(id, user_id, action, delta, created_at)
 | 社区 | `GET /feed`、`POST /feed/{id}/like` | 动态流、点赞 |
 | 激励 | `GET /badges`、`POST /make-up-cards/use` | 徽章、补签 |
 | 提醒 | `POST /reminders/settings` | 每日提醒配置 |
+| 共读小队 | `getRooms()` | 小队列表 + 成员/打卡统计 + 是否已加入 |
+| 共读小队 | `createRoom(name, book, goalMin, goalDays)` | 创建小队，生成邀请码，创建者成为队长 |
+| 共读小队 | `joinRoom(inviteCode)` | 凭 6 位邀请码加入（幂等、校验人数上限） |
+| 共读小队 | `getRoomDetail(roomId)` | 房间信息 + 成员各自坚持天数/分钟 + 我的角色 |
+| 共读小队 | `roomCheckin(roomId, minutes, note)` | 小队每日打卡（同日累加，+5 积分） |
+| 共读小队 | `leaveRoom(roomId)` | 成员退出（队长不可直接退出） |
 
 打卡核心接口示例：
 

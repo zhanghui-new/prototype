@@ -7,7 +7,9 @@
     "pages/stats/stats",
     "pages/timer/timer",
     "pages/done/done",
-    "pages/login/login"
+    "pages/login/login",
+    "pages/room-create/room-create",
+    "pages/room/room"
   ],
   "window": {
     "navigationStyle": "custom",

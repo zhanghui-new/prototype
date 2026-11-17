@@ -63,18 +63,20 @@
     <header class="head">
       <span class="eyebrow"><i></i>阅迹 · 读书打卡</span>
       <h1>微信小程序源码存档</h1>
-      <p class="lead">原生微信小程序工程，页面全部通过 <code>utils/api.js</code> 从云端接口取数，覆盖首页、书架、共读圈、统计、计时、打卡完成、登录与个人中心。</p>
+      <p class="lead">原生微信小程序工程，页面全部通过 <code>utils/api.js</code> 从云端接口取数，覆盖首页、书架、共读圈、多人共读小队、统计、计时、打卡完成、登录与个人中心。</p>
     </header>
 
     <div class="notice">这里是源码存档，不能直接在浏览器里运行。请用微信开发者工具导入本目录，或在小程序环境中体验。</div>
 
     <section class="grid">
       <a class="item" href="./app.json"><h2>app.json</h2><p>页面路由、tabBar 与窗口配置。</p></a>
-      <a class="item" href="./utils/api.js"><h2>utils/api.js</h2><p>统一接口层：概览、书架、打卡、动态、点赞、徽章、附近共读、金句与榜单。</p></a>
+      <a class="item" href="./utils/api.js"><h2>utils/api.js</h2><p>统一接口层：概览、书架、打卡、动态、点赞、多人共读小队、徽章、附近共读、金句与榜单。</p></a>
       <a class="item" href="./utils/cloud.js"><h2>utils/cloud.js</h2><p>云服务 SDK 单点初始化。</p></a>
       <a class="item" href="./pages/home/home.wxml"><h2>pages/home/</h2><p>首页与今日阅读概览。</p></a>
       <a class="item" href="./pages/timer/timer.wxml"><h2>pages/timer/</h2><p>阅读计时与打卡入口。</p></a>
-      <a class="item" href="./pages/community/community.wxml"><h2>pages/community/</h2><p>共读圈动态、附近共读与金句。</p></a>
+      <a class="item" href="./pages/community/community.wxml"><h2>pages/community/</h2><p>共读圈动态、附近共读与共读小队入口。</p></a>
+      <a class="item" href="./pages/room/room.wxml"><h2>pages/room/</h2><p>小队详情：成员打卡进度、邀请码、每日小队打卡。</p></a>
+      <a class="item" href="./pages/room-create/room-create.wxml"><h2>pages/room-create/</h2><p>创建小队：命名、共读书目、每日目标与坚持周期。</p></a>
       <a class="item" href="./images/tab/today.png"><h2>images/tab/</h2><p>与 H5 一致的线性 Tab 图标资源。</p></a>
       <a class="item" href="./scripts/gen-icons.js"><h2>scripts/gen-icons.js</h2><p>Tab 图标生成脚本。</p></a>
     </section>
