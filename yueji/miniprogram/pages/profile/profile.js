@@ -9,6 +9,7 @@ Page({
     userName: '',
     nickname: '',
     avaText: '',
+    avatarCls: 'a1',
     level: '',
     signature: '',
     totalHours: 0,
@@ -57,6 +58,7 @@ Page({
       userName: d.nickname,
       nickname: d.nickname,
       avaText: (d.nickname || '书').charAt(0),
+      avatarCls: d.avatarCls || 'a1',
       level: d.level,
       signature: d.signature || '还没有签名，去设置一句吧',
       totalHours: d.totalHours,
@@ -73,6 +75,14 @@ Page({
 
   goLogin() {
     wx.navigateTo({ url: '/pages/login/login' });
+  },
+
+  goEditProfile() {
+    if (!this.data.loggedIn) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      return this.goLogin();
+    }
+    wx.navigateTo({ url: '/pages/profile-edit/profile-edit' });
   },
 
   async signOut() {

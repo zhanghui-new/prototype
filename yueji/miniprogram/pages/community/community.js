@@ -8,7 +8,6 @@ Page({
     feedCount: 0,
     podium: [],
     rankList: [],
-    nearbyList: [],
     rooms: [],
     myRooms: [],
     joining: false,
@@ -32,16 +31,15 @@ Page({
 
   async refresh() {
     this.setData({ loading: true, loadError: '' });
-    const [f, n, r, rm] = await Promise.all([
-      api.getFeed(), api.getNearby(), api.getLeaderboard(), api.getRooms()
+    const [f, r, rm] = await Promise.all([
+      api.getFeed(), api.getLeaderboard(), api.getRooms()
     ]);
-    const failed = !!(f.error || n.error || r.error || rm.error);
+    const failed = !!(f.error || r.error || rm.error);
     this.setData({
       loading: false,
       loadError: failed ? '部分数据加载失败，点击重试' : '',
       feed: f.data ? f.data.feed : [],
       feedCount: f.data ? f.data.count : 0,
-      nearbyList: n.data || [],
       podium: r.data ? r.data.podium : [],
       rankList: r.data ? r.data.rankList : [],
       rooms: rm.data ? rm.data.rooms : [],
@@ -83,10 +81,6 @@ Page({
 
   congrats() {
     wx.showToast({ title: '已送出祝贺 🏅', icon: 'none' });
-  },
-
-  greet(e) {
-    wx.showToast({ title: `已向 ${e.currentTarget.dataset.name} 打招呼 👋`, icon: 'none' });
   },
 
   // ---------- 共读小队 ----------

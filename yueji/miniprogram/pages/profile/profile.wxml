@@ -4,7 +4,7 @@
 
   <!-- 个人信息 -->
   <view class="me-head" style="padding-top: {{statusBarH}}px;">
-    <view class="me-ava">{{avaText}}</view>
+    <view class="me-ava {{avatarCls}}" bindtap="goEditProfile">{{avaText}}</view>
     <view class="me-info">
       <view class="nm serif">{{loggedIn ? nickname : '未登录'}}<text class="lv">{{level}}</text></view>
       <view class="sig">{{signature}}</view>
@@ -65,6 +65,12 @@
 
   <!-- 设置 -->
   <view class="set-list">
+    <view class="set-item" bindtap="goEditProfile">
+      <view class="s-ico i6">✎</view>
+      <text>编辑个人信息</text>
+      <text class="val">昵称 · 头像 · 签名</text>
+      <text class="arrow">›</text>
+    </view>
     <view class="set-item" bindtap="toggleRemind">
       <view class="s-ico i1">⏰</view>
       <text>每日阅读提醒</text>

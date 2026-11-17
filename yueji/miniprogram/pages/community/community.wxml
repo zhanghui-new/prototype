@@ -10,7 +10,6 @@
   <view class="comm-tabs">
     <view class="comm-tab {{pane === 'feed' ? 'on' : ''}}" bindtap="switchPane" data-pane="feed">好友动态</view>
     <view class="comm-tab {{pane === 'rank' ? 'on' : ''}}" bindtap="switchPane" data-pane="rank">连续排行</view>
-    <view class="comm-tab {{pane === 'nearby' ? 'on' : ''}}" bindtap="switchPane" data-pane="nearby">附近共读</view>
     <view class="comm-tab {{pane === 'rooms' ? 'on' : ''}}" bindtap="switchPane" data-pane="rooms">共读小队</view>
   </view>
 
@@ -82,29 +81,8 @@
     </view>
   </view>
 
-  <!-- 附近共读：数据来自 nearby_readers 接口 -->
-  <view wx:elif="{{pane === 'nearby'}}">
-    <view class="nearby-tip">同城书友 · 不获取你的位置信息</view>
-    <view class="nearby-card" wx:for="{{nearbyList}}" wx:key="id">
-      <view class="n-ava {{item.avaCls}}">{{item.avaText}}</view>
-      <view class="n-body">
-        <view class="n-head">
-          <text class="nm">{{item.name}}</text>
-          <text class="dist">{{item.distance}}</text>
-        </view>
-        <view class="n-book">正在读《{{item.book}}》</view>
-        <view class="n-state {{item.reading ? 'on' : ''}}">{{item.reading ? '● 正在打卡' : '· 今日已打卡'}}</view>
-      </view>
-      <view class="n-btn" bindtap="greet" data-name="{{item.name}}">打招呼</view>
-    </view>
-    <view class="nearby-foot" wx:if="{{nearbyList.length > 0}}">— 已展示附近 {{nearbyList.length}} 位书友 —</view>
-    <view class="empty-state" wx:if="{{!loading && nearbyList.length === 0}}">
-      <text class="ico">📍</text>附近暂时没有其他书友
-    </view>
-  </view>
-
   <!-- 共读小队：多人一起读书打卡 -->
-  <view wx:else>
+  <view wx:elif="{{pane === 'rooms'}}">
     <view class="room-hero">
       <view class="rh-title serif">一起读，走得更远</view>
       <view class="rh-desc">约上书友组建小队，每日互相可见打卡进度</view>

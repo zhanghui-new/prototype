@@ -9,7 +9,8 @@
     "pages/done/done",
     "pages/login/login",
     "pages/room-create/room-create",
-    "pages/room/room"
+    "pages/room/room",
+    "pages/profile-edit/profile-edit"
   ],
   "window": {
     "navigationStyle": "custom",

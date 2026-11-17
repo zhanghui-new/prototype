@@ -63,8 +63,10 @@
 ├── 5 共读圈（社区）
 │   ├── 动态流（好友/关注）、摘录卡片样式
 │   ├── 连续天数排行榜（周榜/总榜）
+│   ├── 共读小队（创建 / 邀请码加入 / 成员进度互看 / 小队打卡）
 │   └── 互动：点赞、评论、收藏、祝贺
 └── 6 我的
+    ├── 个人信息编辑（昵称 / 头像配色 / 个性签名 / 年度目标）
     ├── 年度阅读计划（目标本数、进度）
     ├── 徽章墙（连击类/数量类/时段类/全勤类）
     ├── 补签卡（每月 2 张，看广告或积分兑换）
@@ -119,7 +121,7 @@
 ## 4. 数据模型（核心 ER）
 
 ```
-User(id, nickname, avatar, level, exp, joined_at, daily_goal_min,
+User(id, owner_id, nickname, signature, avatar_cls[a1..a4], level, exp, joined_at, daily_goal_min,
      streak_current, streak_best, make_up_cards, year_goal_books,
      reminder_time, privacy_mode)
 
@@ -154,6 +156,8 @@ RoomCheckIn(id, room_id, owner_id, member_name, date, minutes, note, created_at)
 > 设计要点：`CheckIn` 按日幂等（唯一键），StreakLog 单独落日表，热力图 / 排行榜直接扫该表，避免实时聚合。
 >
 > 多人共读三表均为「公开读 + 本人写」：房间、成员、房间打卡对全部登录可见（用于成员互看进度），写入由 RLS 的 `owner_id = auth.uid()` 约束到本人；队长通过 `role=owner` 标识，仅队长可管理房间。小队每日打卡按 `(room_id, owner_id, date)` 幂等，同日再次打卡累加分钟。
+>
+> 个人信息由 `profiles` 表承载，「编辑个人信息」页写入 `nickname / signature / avatar_cls / year_goal`。新发布的动态与新加入的小队成员名优先取档案昵称，未填写时回退登录身份。原「附近共读」（`nearby_readers`）功能已下线，页面入口与接口方法均已移除。
 
 ---
 
@@ -170,6 +174,8 @@ RoomCheckIn(id, room_id, owner_id, member_name, date, minutes, note, created_at)
 | 排行 | `GET /leaderboard?period=week|all` | 连续天数榜 |
 | 社区 | `GET /feed`、`POST /feed/{id}/like` | 动态流、点赞 |
 | 激励 | `GET /badges`、`POST /make-up-cards/use` | 徽章、补签 |
+| 我的 | `getMyProfile()` | 读取个人档案（昵称 / 签名 / 头像配色 / 年度目标） |
+| 我的 | `updateProfile(patch)` | 保存个人信息与阅读设置（RLS 仅本人可写） |
 | 提醒 | `POST /reminders/settings` | 每日提醒配置 |
 | 共读小队 | `getRooms()` | 小队列表 + 成员/打卡统计 + 是否已加入 |
 | 共读小队 | `createRoom(name, book, goalMin, goalDays)` | 创建小队，生成邀请码，创建者成为队长 |

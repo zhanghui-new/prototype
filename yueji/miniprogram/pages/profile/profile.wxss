@@ -7,6 +7,10 @@
   box-shadow: 0 16rpx 40rpx rgba(180, 83, 42, 0.35);
   font-family: "STSong", serif;
 }
+.me-ava.a1 { background: linear-gradient(135deg, #B4532A, #8A3B1E); }
+.me-ava.a2 { background: linear-gradient(135deg, #2D6A4F, #1E4A36); }
+.me-ava.a3 { background: linear-gradient(135deg, #39586E, #21303E); }
+.me-ava.a4 { background: linear-gradient(135deg, #C98F2E, #8A6218); }
 .me-info { flex: 1; min-width: 0; }
 .me-info .nm { display: flex; align-items: center; gap: 16rpx; font-size: 42rpx; font-weight: 900; }
 .me-info .lv {
@@ -87,6 +91,7 @@
 .s-ico.i3 { background: var(--amber-soft); }
 .s-ico.i4 { background: #E7E3F4; }
 .s-ico.i5 { background: #E3EBF0; }
+.s-ico.i6 { background: var(--primary-soft); color: var(--primary); }
 .set-item .val { margin-left: auto; font-size: 25rpx; color: var(--ink-faint); }
 .set-item .arrow { margin-left: 8rpx; color: var(--ink-faint); font-size: 28rpx; }
 

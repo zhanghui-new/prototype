@@ -1,7 +1,7 @@
 // 阅迹统一数据接口层
 // 所有页面数据只经此层读写云数据库；页面不再持有任何静态业务数据。
 // 私有数据（books/checkins/profiles/feed_likes）由 RLS 按 owner 隔离，
-// 平台内容（feeds/badges/nearby_readers/quotes/leaderboard）公开只读。
+// 平台内容（feeds/badges/quotes/leaderboard）公开只读。
 const { cloud } = require('./cloud');
 const { createTableAccess } = require('./cloud-data-access');
 const { booksTable, checkinsTable } = require('./repo');
@@ -27,12 +27,13 @@ function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x
 // ---------------- 表访问定义 ----------------
 const profilesTable = createTableAccess(cloud, {
   table: 'profiles',
-  columns: ['id', 'nickname', 'signature', 'level', 'goal_min', 'year_goal', 'remind_on', 'report_on', 'points', 'makeup_cards', 'created_at'],
+  columns: ['id', 'nickname', 'signature', 'level', 'goal_min', 'year_goal', 'remind_on', 'report_on', 'points', 'makeup_cards', 'avatar_cls', 'created_at'],
   orderBy: { column: 'created_at', ascending: false },
   fromRow: r => ({
     id: r.id, nickname: r.nickname, signature: r.signature, level: r.level,
     goalMin: r.goal_min, yearGoal: r.year_goal, remindOn: r.remind_on,
-    reportOn: r.report_on, points: r.points, makeupCards: r.makeup_cards
+    reportOn: r.report_on, points: r.points, makeupCards: r.makeup_cards,
+    avatarCls: r.avatar_cls || 'a1'
   }),
   toRow: p => {
     const row = {};
@@ -45,6 +46,7 @@ const profilesTable = createTableAccess(cloud, {
     if (p.reportOn !== undefined) row.report_on = p.reportOn;
     if (p.points !== undefined) row.points = p.points;
     if (p.makeupCards !== undefined) row.makeup_cards = p.makeupCards;
+    if (p.avatarCls !== undefined) row.avatar_cls = p.avatarCls;
     return row;
   }
 });
@@ -102,20 +104,6 @@ const badgesTable = createTableAccess(cloud, {
   toRow: b => ({
     code: b.code, icon: b.icon, name: b.name, description: b.description,
     rule: b.rule, threshold: b.threshold, sort_order: b.sortOrder
-  })
-});
-
-const nearbyTable = createTableAccess(cloud, {
-  table: 'nearby_readers',
-  columns: ['id', 'name', 'ava_text', 'ava_cls', 'distance', 'book', 'reading', 'sort_order'],
-  orderBy: { column: 'sort_order', ascending: true },
-  fromRow: r => ({
-    id: r.id, name: r.name, avaText: r.ava_text, avaCls: r.ava_cls,
-    distance: r.distance, book: r.book, reading: r.reading
-  }),
-  toRow: n => ({
-    name: n.name, ava_text: n.avaText, ava_cls: n.avaCls,
-    distance: n.distance, book: n.book, reading: n.reading, sort_order: n.sortOrder
   })
 });
 
@@ -225,6 +213,14 @@ function displayName(session) {
   return raw || '书友';
 }
 
+// 新记录优先使用用户在「编辑资料」里设置的昵称；没有档案或读取失败时回退到登录身份。
+async function preferredName(session) {
+  const fallback = displayName(session);
+  if (!session) return fallback;
+  const { rows, error } = await listOf(profilesTable);
+  return (!error && rows[0] && rows[0].nickname) ? rows[0].nickname : fallback;
+}
+
 // auth.uid() 在服务端由 session 推导；客户端只用它判断 UI 归属（是否房主/是否已加入），
 // 真正的权限边界仍由 RLS 的 owner_id = auth.uid() 保证。
 function currentUid(session) {
@@ -277,9 +273,20 @@ async function createProfileFor(session) {
     remindOn: true,
     reportOn: true,
     points: 0,
-    makeupCards: 2
+    makeupCards: 2,
+    avatarCls: 'a1'
   });
   return { data, error: error || null };
+}
+
+async function getMyProfile() {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录' }, needLogin: true };
+  const { rows, error } = await listOf(profilesTable);
+  if (error) return { data: null, error };
+  if (rows.length) return { data: rows[0], error: null };
+  const created = await createProfileFor(session);
+  return { data: created.data || null, error: created.error || null };
 }
 
 async function updateProfile(patch) {
@@ -423,6 +430,7 @@ async function getOverview() {
       profile,
       nickname: (profile && profile.nickname) || (session ? displayName(session) : ''),
       signature: (profile && profile.signature) || '',
+      avatarCls: (profile && profile.avatarCls) || 'a1',
       level: `拾页者 · Lv.${1 + Math.floor(checkinDays / 10)}`,
       goalMin, yearGoal,
       remindOn: profile ? profile.remindOn !== false : true,
@@ -539,7 +547,7 @@ async function getFeed() {
 async function publishFeed(payload) {
   const { session } = await currentSession();
   if (!session) return { data: null, error: { message: '请先登录后发布' }, needLogin: true };
-  const name = displayName(session);
+  const name = await preferredName(session);
   const overview = await getOverview();
   const { data, error } = await feedsTable.create({
     authorName: name,
@@ -573,7 +581,7 @@ async function toggleFeedLike(feedId) {
   return { data: { liked: !res.error }, error: res.error || null };
 }
 
-// ---------------- 徽章 / 附近 / 榜单 ----------------
+// ---------------- 徽章 / 榜单 ----------------
 async function getBadges() {
   const [b, ov] = await Promise.all([listOf(badgesTable), getOverview()]);
   const o = ov.data || {};
@@ -594,11 +602,6 @@ async function getBadges() {
     };
   });
   return { data: badges, error: b.error || ov.error || null };
-}
-
-async function getNearby() {
-  const r = await listOf(nearbyTable);
-  return { data: r.rows, error: r.error };
 }
 
 async function getLeaderboard() {
@@ -716,7 +719,7 @@ async function getRoomDetail(roomId) {
 async function createRoom(payload) {
   const { session } = await currentSession();
   if (!session) return { data: null, error: { message: '请先登录后创建' }, needLogin: true };
-  const name = displayName(session);
+  const name = await preferredName(session);
   const rows = await listOf(roomsTable);
   const used = new Set(rows.rows.map(r => r.inviteCode));
   let code = makeInviteCode();
@@ -760,7 +763,7 @@ async function joinRoom(inviteCode) {
     return { data: null, error: { message: '小队人数已满' } };
   }
   const created = await roomMembersTable.create({
-    roomId: room.id, memberName: displayName(session),
+    roomId: room.id, memberName: await preferredName(session),
     avaCls: avatarClass(uid), role: 'member'
   });
   if (created.error) return { data: null, error: created.error };
@@ -798,7 +801,7 @@ async function roomCheckin(roomId, minutes, note) {
     return { data: res.data, error: res.error || null, appended: true };
   }
   const res = await roomCheckinsTable.create({
-    roomId: Number(roomId), memberName: displayName(session),
+    roomId: Number(roomId), memberName: await preferredName(session),
     date: todayK, minutes: addMin, note: String(note || '').slice(0, 120)
   });
   if (!res.error) await addPoints(5);
@@ -811,7 +814,7 @@ module.exports = {
   // 综合统计
   getOverview,
   // 档案
-  updateProfile, addPoints,
+  getMyProfile, updateProfile, addPoints,
   // 打卡
   createCheckin, flushPendingCheckins,
   // 书架
@@ -819,11 +822,11 @@ module.exports = {
   // 社区
   getFeed, publishFeed, toggleFeedLike,
   // 我的 / 榜单
-  getBadges, getNearby, getLeaderboard,
+  getBadges, getLeaderboard,
   // 多人共读小队
   getRooms, getRoomDetail, createRoom, joinRoom, leaveRoom, roomCheckin,
   // 常量（产品规则）
   PAGES_PER_MIN, PUBLISH_POINTS,
   // 底层表（供扩展）
-  tables: { profilesTable, feedsTable, feedLikesTable, badgesTable, nearbyTable, quotesTable, leaderboardTable, booksTable, checkinsTable, roomsTable, roomMembersTable, roomCheckinsTable }
+  tables: { profilesTable, feedsTable, feedLikesTable, badgesTable, quotesTable, leaderboardTable, booksTable, checkinsTable, roomsTable, roomMembersTable, roomCheckinsTable }
 };

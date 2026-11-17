@@ -1,0 +1,52 @@
+<view class="page">
+  <view class="nav" style="padding-top: {{statusBarH}}px;">
+    <view class="nav-back" bindtap="goBack">‹</view>
+    <view class="nav-title serif">编辑个人信息</view>
+    <view class="nav-slot"></view>
+  </view>
+
+  <view class="state-bar error" wx:if="{{loadError}}" bindtap="load">{{loadError}}</view>
+  <view class="state-bar" wx:elif="{{loading}}">正在读取个人档案…</view>
+
+  <view class="form" wx:else>
+    <view class="avatar-card">
+      <view class="preview-ava {{avatarCls}}">{{initial}}</view>
+      <view class="pa-body">
+        <view class="pa-t serif">我的头像</view>
+        <view class="pa-d">选一种属于你的纸墨配色</view>
+      </view>
+    </view>
+    <view class="palette">
+      <view class="swatch {{item.cls}} {{avatarCls === item.cls ? 'on' : ''}}"
+        wx:for="{{colors}}" wx:key="cls" bindtap="pickAvatar" data-cls="{{item.cls}}">{{item.label}}</view>
+    </view>
+
+    <view class="field">
+      <view class="lb">昵称 <text class="opt">必填</text></view>
+      <input class="input" placeholder="给自己取一个读书的名字" maxlength="16" bindinput="onNickname" value="{{nickname}}" />
+      <view class="hint">{{nickname.length}}/16</view>
+    </view>
+
+    <view class="field">
+      <view class="lb">个性签名 <text class="opt">选填</text></view>
+      <textarea class="input area" placeholder="写一句喜欢的书话" maxlength="60" auto-height bindinput="onSignature" value="{{signature}}" />
+      <view class="hint">{{signature.length}}/60</view>
+    </view>
+
+    <view class="field">
+      <view class="lb">年度阅读目标</view>
+      <view class="chips">
+        <view class="chip {{yearGoal === item ? 'on' : ''}}" wx:for="{{yearGoals}}" wx:key="*this"
+          bindtap="pickYear" data-year="{{item}}">{{item}} 本</view>
+      </view>
+      <view class="hint">{{yearText}} 年计划读完 {{yearGoal}} 本书</view>
+    </view>
+
+    <view class="tip-card">
+      <view class="tip-t">资料同步范围</view>
+      <view class="tip-d">昵称与头像会用于个人主页、书架与共读小队；保存后新发布的动态与新加入的小队都会使用新昵称。</view>
+    </view>
+
+    <view class="btn-primary submit {{saving ? 'disabled' : ''}}" bindtap="save">{{saving ? '保存中…' : '保存资料'}}</view>
+  </view>
+</view>
