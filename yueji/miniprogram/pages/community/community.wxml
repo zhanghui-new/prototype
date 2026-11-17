@@ -35,9 +35,26 @@
         </view>
         <view class="f-meta">
           <view class="act {{item.liked ? 'on' : ''}}" bindtap="toggleLike" data-id="{{item.id}}">♥ {{item.likes}}</view>
-          <view class="act" bindtap="comment">💬 {{item.comments}}</view>
+          <view class="act {{item.commentOpen ? 'on' : ''}}" bindtap="toggleComment" data-index="{{index}}">💬 {{item.comments}}</view>
           <view class="act" bindtap="collect" wx:if="{{item.showCollect}}">⤴ 收藏</view>
           <view class="act" bindtap="congrats" wx:if="{{item.showCongrats}}">🏅 祝贺</view>
+          <view class="act del" wx:if="{{item.isMine}}" bindtap="deleteFeed" data-id="{{item.id}}">✕ 删除</view>
+        </view>
+
+        <view class="c-panel" wx:if="{{item.commentOpen}}">
+          <view class="c-row" wx:for="{{item.commentList}}" wx:for-item="c" wx:for-index="ci" wx:key="id">
+            <view class="c-ava {{c.avaCls}}">{{c.avaText}}</view>
+            <view class="c-body">
+              <view class="c-head"><text class="c-nm">{{c.name}}</text><text class="c-tm">{{c.time}}</text></view>
+              <view class="c-text">{{c.text}}</view>
+            </view>
+            <view class="c-del" wx:if="{{c.isMine}}" bindtap="deleteComment" data-feed-index="{{index}}" data-id="{{c.id}}">删除</view>
+          </view>
+          <view class="c-empty" wx:if="{{item.commentList.length === 0}}">还没有评论，来说第一句吧</view>
+          <view class="c-compose">
+            <input class="c-input" value="{{item.commentDraft}}" placeholder="写下你的想法…" maxlength="200" bindinput="onCommentInput" bindconfirm="submitComment" confirm-type="send" data-index="{{index}}" />
+            <view class="c-send" bindtap="submitComment" data-index="{{index}}">发送</view>
+          </view>
         </view>
       </view>
     </view>

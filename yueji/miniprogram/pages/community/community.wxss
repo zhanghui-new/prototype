@@ -134,3 +134,45 @@
 }
 .rc-bar { height: 100%; border-radius: 4rpx; background: var(--amber); }
 .rc-arrow { font-size: 44rpx; color: var(--ink-faint); line-height: 1; }
+
+/* 动态操作：删除仅自己的动态可见 */
+.f-meta .act.del { margin-left: auto; color: var(--ink-faint); }
+.f-meta .act.del:active { color: var(--primary); }
+
+/* 评论列表与输入 */
+.c-panel {
+  margin-top: 20rpx; padding: 18rpx 22rpx;
+  background: var(--paper-deep); border-radius: 16rpx;
+}
+.c-row { display: flex; align-items: flex-start; gap: 16rpx; padding: 14rpx 0; }
+.c-row + .c-row { border-top: 2rpx solid var(--line); }
+.c-ava {
+  width: 52rpx; height: 52rpx; flex-shrink: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22rpx; font-weight: 700; color: #FFF6EC; font-family: "STSong", serif;
+}
+.c-ava.a1 { background: linear-gradient(135deg, #B4532A, #8A3B1E); }
+.c-ava.a2 { background: linear-gradient(135deg, #2D6A4F, #1E4A36); }
+.c-ava.a3 { background: linear-gradient(135deg, #39586E, #21303E); }
+.c-ava.a4 { background: linear-gradient(135deg, #C98F2E, #8A6218); }
+.c-body { flex: 1; min-width: 0; }
+.c-head { display: flex; align-items: baseline; gap: 14rpx; }
+.c-nm { font-size: 23rpx; font-weight: 600; color: var(--ink); }
+.c-tm { font-size: 19rpx; color: var(--ink-faint); }
+.c-text { font-size: 24rpx; line-height: 1.6; color: var(--ink-soft); margin-top: 6rpx; word-break: break-all; }
+.c-del { flex-shrink: 0; font-size: 20rpx; color: var(--ink-faint); padding: 6rpx 4rpx; }
+.c-del:active { color: var(--primary); }
+.c-empty { text-align: center; font-size: 22rpx; color: var(--ink-faint); padding: 20rpx 0 12rpx; }
+.c-compose {
+  display: flex; align-items: center; gap: 14rpx;
+  margin-top: 12rpx; padding-top: 18rpx; border-top: 2rpx solid var(--line);
+}
+.c-input {
+  flex: 1; min-width: 0; height: 64rpx; padding: 0 20rpx;
+  background: var(--surface); border: 2rpx solid var(--line); border-radius: 999rpx;
+  font-size: 23rpx; color: var(--ink);
+}
+.c-send {
+  flex-shrink: 0; padding: 14rpx 28rpx; border-radius: 999rpx;
+  background: var(--primary); color: #FFF6EC; font-size: 23rpx; font-weight: 600;
+}

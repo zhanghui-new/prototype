@@ -1,7 +1,7 @@
 // 阅迹统一数据接口层
 // 所有页面数据只经此层读写云数据库；页面不再持有任何静态业务数据。
-// 私有数据（books/checkins/profiles/feed_likes）由 RLS 按 owner 隔离，
-// 平台内容（feeds/badges/quotes/leaderboard）公开只读。
+// 私有数据（books/checkins/profiles）由 RLS 按 owner 隔离；动态与点赞/评论公开可读，
+// 发布与删除由 RLS 的 owner_id = auth.uid() 约束到本人。
 const { cloud } = require('./cloud');
 const { createTableAccess } = require('./cloud-data-access');
 const { booksTable, checkinsTable } = require('./repo');
@@ -53,10 +53,10 @@ const profilesTable = createTableAccess(cloud, {
 
 const feedsTable = createTableAccess(cloud, {
   table: 'feeds',
-  columns: ['id', 'author_name', 'author_level', 'ava_text', 'ava_cls', 'content', 'hl', 'suffix', 'quote', 'quote_src', 'book', 'cover_cls', 'likes', 'comments', 'show_collect', 'show_congrats', 'created_at'],
+  columns: ['id', 'owner_id', 'author_name', 'author_level', 'ava_text', 'ava_cls', 'content', 'hl', 'suffix', 'quote', 'quote_src', 'book', 'cover_cls', 'likes', 'comments', 'show_collect', 'show_congrats', 'created_at'],
   orderBy: { column: 'created_at', ascending: false },
   fromRow: r => ({
-    id: r.id, authorName: r.author_name, authorLevel: r.author_level,
+    id: r.id, ownerId: r.owner_id, authorName: r.author_name, authorLevel: r.author_level,
     avaText: r.ava_text, avaCls: r.ava_cls, content: r.content,
     hl: r.hl, suffix: r.suffix, quote: r.quote, quoteSrc: r.quote_src,
     book: r.book, coverCls: r.cover_cls, likes: r.likes, comments: r.comments,
@@ -86,10 +86,25 @@ const feedsTable = createTableAccess(cloud, {
 
 const feedLikesTable = createTableAccess(cloud, {
   table: 'feed_likes',
-  columns: ['id', 'feed_id', 'created_at'],
+  columns: ['id', 'owner_id', 'feed_id', 'created_at'],
   orderBy: { column: 'created_at', ascending: false },
-  fromRow: r => ({ id: r.id, feedId: r.feed_id }),
+  fromRow: r => ({ id: r.id, feedId: r.feed_id, ownerId: r.owner_id }),
   toRow: l => ({ feed_id: l.feedId })
+});
+
+const feedCommentsTable = createTableAccess(cloud, {
+  table: 'feed_comments',
+  columns: ['id', 'owner_id', 'feed_id', 'author_name', 'ava_text', 'ava_cls', 'content', 'created_at'],
+  orderBy: { column: 'created_at', ascending: true },
+  fromRow: r => ({
+    id: r.id, ownerId: r.owner_id, feedId: r.feed_id,
+    name: r.author_name, avaText: r.ava_text, avaCls: r.ava_cls,
+    text: r.content, createdAt: r.created_at
+  }),
+  toRow: c => ({
+    feed_id: c.feedId, author_name: c.name, ava_text: c.avaText,
+    ava_cls: c.avaCls, content: c.text
+  })
 });
 
 const badgesTable = createTableAccess(cloud, {
@@ -213,12 +228,32 @@ function displayName(session) {
   return raw || '书友';
 }
 
-// 新记录优先使用用户在「编辑资料」里设置的昵称；没有档案或读取失败时回退到登录身份。
-async function preferredName(session) {
+// 新记录优先使用用户在「编辑资料」里设置的昵称/头像；没有档案或读取失败时回退到登录身份。
+async function preferredIdentity(session) {
   const fallback = displayName(session);
-  if (!session) return fallback;
+  if (!session) return { name: fallback, avatarCls: 'a1' };
   const { rows, error } = await listOf(profilesTable);
-  return (!error && rows[0] && rows[0].nickname) ? rows[0].nickname : fallback;
+  const p = (!error && rows[0]) ? rows[0] : null;
+  return {
+    name: (p && p.nickname) ? p.nickname : fallback,
+    avatarCls: (p && p.avatarCls) ? p.avatarCls : 'a1'
+  };
+}
+
+async function preferredName(session) {
+  return (await preferredIdentity(session)).name;
+}
+
+function commentView(r, uid, now) {
+  const ts = r.createdAt ? new Date(r.createdAt).getTime() : 0;
+  const name = r.name || '书友';
+  return {
+    id: r.id, feedId: r.feedId,
+    name, avaText: r.avaText || name.charAt(0) || '书',
+    avaCls: r.avaCls || 'a1', text: r.text || '',
+    time: relativeTime(ts, now),
+    isMine: !!(uid && String(r.ownerId) === uid)
+  };
 }
 
 // auth.uid() 在服务端由 session 推导；客户端只用它判断 UI 归属（是否房主/是否已加入），
@@ -514,15 +549,32 @@ async function addBook(book) {
 
 // ---------------- 社区动态 ----------------
 async function getFeed() {
-  const [f, l] = await Promise.all([listOf(feedsTable), listOf(feedLikesTable)]);
-  const likedIds = new Set(l.rows.map(x => String(x.feedId)));
+  const { session } = await currentSession();
+  const uid = currentUid(session);
+  const [f, l, c] = await Promise.all([
+    listOf(feedsTable), listOf(feedLikesTable), listOf(feedCommentsTable)
+  ]);
   const now = Date.now();
+  const likesByFeed = new Map();
+  const likedIds = new Set();
+  l.rows.forEach(x => {
+    const key = String(x.feedId);
+    likesByFeed.set(key, (likesByFeed.get(key) || 0) + 1);
+    if (uid && String(x.ownerId) === uid) likedIds.add(key);
+  });
+  const commentsByFeed = new Map();
+  c.rows.forEach(x => {
+    const key = String(x.feedId);
+    if (!commentsByFeed.has(key)) commentsByFeed.set(key, []);
+    commentsByFeed.get(key).push(commentView(x, uid, now));
+  });
   const feed = f.rows.map(r => {
     const ts = r.createdAt ? new Date(r.createdAt).getTime() : 0;
-    const liked = likedIds.has(String(r.id));
+    const key = String(r.id);
+    const comments = commentsByFeed.get(key) || [];
     return {
       id: r.id,
-      name: r.authorName,
+      name: r.authorName || '书友',
       level: r.authorLevel || '',
       avaText: r.avaText || '',
       avaCls: r.avaCls || 'a1',
@@ -533,9 +585,13 @@ async function getFeed() {
       quoteSrc: r.quoteSrc || '',
       book: r.book || '',
       coverCls: r.coverCls || '',
-      likes: (r.likes || 0) + (liked ? 1 : 0),
-      comments: r.comments || 0,
-      liked,
+      likes: likesByFeed.get(key) || 0,
+      comments: comments.length,
+      commentList: comments,
+      commentOpen: false,
+      commentDraft: '',
+      liked: likedIds.has(key),
+      isMine: !!(uid && r.ownerId && String(r.ownerId) === uid),
       showCollect: !!r.showCollect,
       showCongrats: !!r.showCongrats,
       time: relativeTime(ts, now),
@@ -543,19 +599,19 @@ async function getFeed() {
       createdTs: ts
     };
   }).sort((a, b) => b.createdTs - a.createdTs);
-  return { data: { feed, count: feed.length }, error: f.error || l.error || null };
+  return { data: { feed, count: feed.length }, error: f.error || l.error || c.error || null };
 }
 
 async function publishFeed(payload) {
   const { session } = await currentSession();
   if (!session) return { data: null, error: { message: '请先登录后发布' }, needLogin: true };
-  const name = await preferredName(session);
+  const identity = await preferredIdentity(session);
   const overview = await getOverview();
   const { data, error } = await feedsTable.create({
-    authorName: name,
+    authorName: identity.name,
     authorLevel: (overview.data && overview.data.level) || '',
-    avaText: name.charAt(0) || '书',
-    avaCls: 'a1',
+    avaText: identity.name.charAt(0) || '书',
+    avaCls: identity.avatarCls,
     content: payload.text || '',
     suffix: payload.suffix || '',
     quote: payload.quote || '',
@@ -572,15 +628,78 @@ async function publishFeed(payload) {
 async function toggleFeedLike(feedId) {
   const { session } = await currentSession();
   if (!session) return { data: null, error: { message: '请先登录后点赞' }, needLogin: true };
-  const { rows, error } = await listOf(feedLikesTable);
+  const uid = currentUid(session);
+  const id = Number(feedId);
+  const { data: likes, error } = await feedLikesTable.listBy('feed_id', id);
   if (error) return { data: null, error };
-  const hit = rows.find(r => String(r.feedId) === String(feedId));
+  const hit = (likes || []).find(r => uid && String(r.ownerId) === uid);
   if (hit) {
     const res = await feedLikesTable.remove(hit.id);
-    return { data: { liked: false }, error: res.error || null };
+    return {
+      data: { liked: false, likes: Math.max(0, likes.length - 1) },
+      error: res.error || null
+    };
   }
-  const res = await feedLikesTable.create({ feedId: Number(feedId) });
-  return { data: { liked: !res.error }, error: res.error || null };
+  const res = await feedLikesTable.create({ feedId: id });
+  return {
+    data: { liked: !res.error, likes: likes.length + (res.error ? 0 : 1) },
+    error: res.error || null
+  };
+}
+
+// 删除动态：只允许作者本人；同时清理其名下的点赞与评论，避免留下孤儿记录。
+async function deleteFeed(feedId) {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录' }, needLogin: true };
+  const uid = currentUid(session);
+  const id = Number(feedId);
+  const found = await feedsTable.listBy('id', id);
+  if (found.error) return { data: null, error: found.error };
+  const row = (found.data || [])[0];
+  if (!row) return { data: null, error: { message: '动态不存在或已被删除' } };
+  if (uid && row.ownerId && String(row.ownerId) !== uid) {
+    return { data: null, error: { message: '只能删除自己的动态' } };
+  }
+  const [likes, comments] = await Promise.all([
+    feedLikesTable.listBy('feed_id', id),
+    feedCommentsTable.listBy('feed_id', id)
+  ]);
+  await Promise.all([
+    ...(likes.data || []).map(x => feedLikesTable.remove(x.id)),
+    ...(comments.data || []).map(x => feedCommentsTable.remove(x.id))
+  ]);
+  const res = await feedsTable.remove(id);
+  return { data: res.data, error: res.error || null };
+}
+
+async function addComment(feedId, content) {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录后评论' }, needLogin: true };
+  const text = String(content || '').trim().slice(0, 200);
+  if (!text) return { data: null, error: { message: '评论内容不能为空' } };
+  const identity = await preferredIdentity(session);
+  const id = Number(feedId);
+  const { data, error } = await feedCommentsTable.create({
+    feedId: id, name: identity.name,
+    avaText: identity.name.charAt(0) || '书',
+    avaCls: identity.avatarCls, text
+  });
+  if (error) return { data: null, error };
+  return {
+    data: {
+      id: data.id, feedId: id, name: identity.name,
+      avaText: identity.name.charAt(0) || '书',
+      avaCls: identity.avatarCls, text, time: '刚刚', isMine: true
+    },
+    error: null
+  };
+}
+
+async function deleteComment(commentId) {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录' }, needLogin: true };
+  const res = await feedCommentsTable.remove(Number(commentId));
+  return { data: res.data, error: res.error || null };
 }
 
 // ---------------- 徽章 / 榜单 ----------------
@@ -822,7 +941,7 @@ module.exports = {
   // 书架
   listBooks, addBook,
   // 社区
-  getFeed, publishFeed, toggleFeedLike,
+  getFeed, publishFeed, toggleFeedLike, deleteFeed, addComment, deleteComment,
   // 我的 / 榜单
   getBadges, getLeaderboard,
   // 多人共读小队
@@ -830,5 +949,5 @@ module.exports = {
   // 常量（产品规则）
   PAGES_PER_MIN, PUBLISH_POINTS,
   // 底层表（供扩展）
-  tables: { profilesTable, feedsTable, feedLikesTable, badgesTable, quotesTable, leaderboardTable, booksTable, checkinsTable, roomsTable, roomMembersTable, roomCheckinsTable }
+  tables: { profilesTable, feedsTable, feedLikesTable, feedCommentsTable, badgesTable, quotesTable, leaderboardTable, booksTable, checkinsTable, roomsTable, roomMembersTable, roomCheckinsTable }
 };

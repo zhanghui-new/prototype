@@ -64,7 +64,7 @@
 │   ├── 动态流（好友/关注）、摘录卡片样式
 │   ├── 连续天数排行榜（周榜/总榜）
 │   ├── 共读小队（创建 / 邀请码加入 / 成员进度互看 / 小队打卡）
-│   └── 互动：点赞、评论、收藏、祝贺
+│   └── 互动：点赞/取消、评论发表与删除、删除自己的动态、收藏、祝贺
 └── 6 我的
     ├── 个人信息编辑（昵称 / 头像配色 / 个性签名 / 年度目标）
     ├── 年度阅读计划（目标本数、进度）
@@ -139,8 +139,12 @@ StreakLog(user_id, date, type[NORMAL/MAKEUP], minutes)    -- 日粒度流水，�
 Badge(id, code, name, icon, condition_type, condition_value)
 UserBadge(user_id, badge_id, unlocked_at)
 
-FeedPost(id, check_in_id, user_id, visible_scope, like_cnt, comment_cnt)
-Like / Comment / Follow(id, user_id, target_user_id, ...)
+FeedPost(id, owner_id, author_name, author_level, ava_text, ava_cls, content,
+         hl, suffix, quote, quote_src, book, cover_cls, created_at)
+FeedLike(id, owner_id, feed_id, created_at)             -- 唯一键(feed_id, owner_id)
+FeedComment(id, owner_id, feed_id, author_name, ava_text, ava_cls, content, created_at)
+                                                       -- FK(feed_id) ON DELETE CASCADE
+Follow(id, user_id, target_user_id, ...)
 
 PointLog(id, user_id, action, delta, created_at)
 
@@ -160,6 +164,8 @@ RoomCheckIn(id, room_id, owner_id, member_name, date, minutes, note, created_at)
 > 个人信息由 `profiles` 表承载，「编辑个人信息」页写入 `nickname / signature / avatar_cls / year_goal`。新发布的动态与新加入的小队成员名优先取档案昵称，未填写时回退登录身份。原「附近共读」（`nearby_readers`）功能已下线，页面入口与接口方法均已移除。
 >
 > 好友动态只读取 `feeds` 表中用户真实发布的打卡动态，不内置任何演示数据；空表时展示空态。打卡成功页的读书摘要以云端 `quotes` 金句为初始值，用户可编辑文本与出处，随打卡写入 `checkins.quote_text / quote_src`，发布到共读圈时同步带入动态卡片。
+>
+> 动态互动：`feed_likes` / `feed_comments` 对所有人公开可读（用于统计真实点赞数、展示评论），发布与删除由 RLS 的 `owner_id = auth.uid()` 约束到本人；用户只能删除自己的动态和评论，删除动态由外键 `ON DELETE CASCADE` 清理关联点赞与评论。点赞按 `(feed_id, owner_id)` 唯一，重复点击切换为取消点赞，计数直接由点赞表聚合，不使用静态计数字段。
 
 ---
 
@@ -174,7 +180,10 @@ RoomCheckIn(id, room_id, owner_id, member_name, date, minutes, note, created_at)
 | 打卡 | `POST /checkins/timer/start·pause·stop` | 计时会话 |
 | 统计 | `GET /stats/summary`、`GET /stats/calendar?month=` | 汇总 / 热力图 |
 | 排行 | `GET /leaderboard?period=week|all` | 连续天数榜 |
-| 社区 | `GET /feed`、`POST /feed/{id}/like` | 动态流、点赞 |
+| 社区 | `GET /feed` | 动态流（真实点赞数 / 评论列表 / 本人归属） |
+| 社区 | `POST /feed/{id}/like` | 点赞 / 取消点赞（返回最新计数） |
+| 社区 | `DELETE /feed/{id}` | 删除自己的动态（级联清理点赞与评论） |
+| 社区 | `POST /feed/{id}/comments`、`DELETE /comments/{id}` | 发表 / 删除自己的评论（≤200 字） |
 | 激励 | `GET /badges`、`POST /make-up-cards/use` | 徽章、补签 |
 | 我的 | `getMyProfile()` | 读取个人档案（昵称 / 签名 / 头像配色 / 年度目标） |
 | 我的 | `updateProfile(patch)` | 保存个人信息与阅读设置（RLS 仅本人可写） |
