@@ -1,0 +1,106 @@
+<view class="page detail-page">
+  <view class="nav" style="padding-top: {{statusBarH}}px;">
+    <view class="nav-back" bindtap="goBack">‹</view>
+    <view class="nav-title serif">{{editing ? '编辑书籍' : '书籍详情'}}</view>
+    <view class="nav-slot"></view>
+  </view>
+
+  <view class="state-bar error" wx:if="{{loadError}}" bindtap="refresh">{{loadError}}</view>
+  <view class="state-bar" wx:elif="{{loading}}">正在从云端加载书籍…</view>
+  <view class="state-bar" wx:if="{{notFound}}">这本书不在你的书架中，返回书架看看吧</view>
+
+  <block wx:if="{{book && !loading}}">
+    <view class="hero">
+      <view class="hero-cover {{book.coverCls}}">
+        <text class="bt">{{book.title}}</text>
+        <text class="ba">{{book.author}}</text>
+      </view>
+      <view class="hero-info">
+        <view class="h-title serif">{{book.title}}</view>
+        <view class="h-author">{{book.author}}</view>
+        <view class="h-pub" wx:if="{{book.publisher}}">{{book.publisher}}</view>
+        <view class="h-status">{{book.statusLabel}}</view>
+      </view>
+    </view>
+
+    <view class="progress-card">
+      <view class="pc-head"><text>阅读进度</text><text class="pct serif">{{book.pct}}%</text></view>
+      <view class="track"><view class="fill {{book.done ? 'g' : ''}}" style="width: {{book.pct}}%"></view></view>
+      <view class="pc-foot">
+        <text>P{{book.currentPage}} / {{book.pages}} 页</text>
+        <text wx:if="{{book.finishedAt}}">{{book.finishedAt}} 读完</text>
+        <text wx:elif="{{book.status === 'DONE'}}">已读完 · {{book.rating}} 分</text>
+      </view>
+    </view>
+
+    <view class="desc" wx:if="{{book.description}}">{{book.description}}</view>
+
+    <view class="action-row">
+      <view class="btn-edit" bindtap="toggleEdit">{{editing ? '取消编辑' : '✎ 编辑书籍信息'}}</view>
+    </view>
+
+    <view class="edit-card" wx:if="{{editing}}">
+      <view class="edit-title serif">编辑书籍信息</view>
+
+      <view class="form-item">
+        <view class="label">书名</view>
+        <input class="input" value="{{form.title}}" maxlength="60" data-field="title" bindinput="onFieldInput" />
+      </view>
+      <view class="form-item">
+        <view class="label">作者</view>
+        <input class="input" value="{{form.author}}" maxlength="60" data-field="author" bindinput="onFieldInput" />
+      </view>
+      <view class="form-item">
+        <view class="label">出版社</view>
+        <input class="input" value="{{form.publisher}}" maxlength="80" placeholder="选填" data-field="publisher" bindinput="onFieldInput" />
+      </view>
+
+      <view class="form-row">
+        <view class="form-item half">
+          <view class="label">总页数</view>
+          <input class="input" type="number" value="{{form.pages}}" data-field="pages" bindinput="onFieldInput" />
+        </view>
+        <view class="form-item half">
+          <view class="label">当前页</view>
+          <input class="input" type="number" value="{{form.currentPage}}" data-field="currentPage" bindinput="onFieldInput" />
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="label">阅读状态</view>
+        <view class="status-pick">
+          <view class="sp-opt {{form.status === item.key ? 'on' : ''}}" wx:for="{{statuses}}" wx:key="key" bindtap="pickStatus" data-status="{{item.key}}">{{item.label}}</view>
+        </view>
+      </view>
+
+      <view class="form-item" wx:if="{{form.status === 'DONE'}}">
+        <view class="label">读完日期</view>
+        <picker mode="date" value="{{form.finishedAt}}" bindchange="onDateChange">
+          <view class="picker">{{form.finishedAt || '选择日期（默认今天）'}}</view>
+        </picker>
+      </view>
+
+      <view class="form-item">
+        <view class="label">评分</view>
+        <view class="star-pick">
+          <view class="star {{form.rating >= item ? 'on' : ''}}" wx:for="{{stars}}" wx:key="*this" bindtap="pickStar" data-n="{{item}}">★</view>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="label">封面配色</view>
+        <view class="cover-pick">
+          <view class="cover-opt {{item}} {{form.coverCls === item ? 'on' : ''}}" wx:for="{{covers}}" wx:key="*this" bindtap="pickCover" data-cls="{{item}}"></view>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="label">书籍简介</view>
+        <textarea class="textarea" value="{{form.description}}" maxlength="500" placeholder="这本书讲了什么？" data-field="description" bindinput="onFieldInput" />
+      </view>
+
+      <button class="btn-primary save-btn" bindtap="save">保存修改</button>
+      <view class="btn-delete" bindtap="deleteBook">从书架移除这本书</view>
+    </view>
+  </block>
+</view>

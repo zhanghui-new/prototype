@@ -10,7 +10,8 @@
     "pages/login/login",
     "pages/room-create/room-create",
     "pages/room/room",
-    "pages/profile-edit/profile-edit"
+    "pages/profile-edit/profile-edit",
+    "pages/book-detail/book-detail"
   ],
   "window": {
     "navigationStyle": "custom",

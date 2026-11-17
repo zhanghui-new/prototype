@@ -148,8 +148,7 @@ Page({
 
   tapBook(e) {
     const id = e.currentTarget.dataset.id;
-    const book = this.data.filtered.find(b => String(b.id) === String(id));
-    wx.showToast({ title: `《${book ? book.title : '这本书'}》详情页开发中`, icon: 'none' });
+    wx.navigateTo({ url: `/pages/book-detail/book-detail?id=${id}` });
   },
 
   goLogin() {

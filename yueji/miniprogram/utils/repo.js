@@ -6,13 +6,15 @@ const { createTableAccess } = require('./cloud-data-access');
 // 书架表访问
 const booksTable = createTableAccess(cloud, {
   table: 'books',
-  columns: ['id', 'title', 'author', 'pages', 'status', 'current_page', 'rating', 'finished_at', 'cover_cls', 'created_at'],
+  columns: ['id', 'title', 'author', 'publisher', 'description', 'pages', 'status', 'current_page', 'rating', 'finished_at', 'cover_cls', 'created_at'],
   orderBy: { column: 'created_at', ascending: false },
   fromRow(row) {
     return {
       id: row.id,
       title: row.title,
       author: row.author,
+      publisher: row.publisher || '',
+      description: row.description || '',
       pages: row.pages,
       status: row.status,
       currentPage: row.current_page,
@@ -25,6 +27,8 @@ const booksTable = createTableAccess(cloud, {
     const row = {};
     if (book.title !== undefined) row.title = book.title;
     if (book.author !== undefined) row.author = book.author;
+    if (book.publisher !== undefined) row.publisher = book.publisher;
+    if (book.description !== undefined) row.description = book.description;
     if (book.pages !== undefined) row.pages = book.pages;
     if (book.status !== undefined) row.status = book.status;
     if (book.currentPage !== undefined) row.current_page = book.currentPage;

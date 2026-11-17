@@ -53,7 +53,8 @@
 │   └── 周报/月报导出
 ├── 3 书架
 │   ├── 三态管理：在读 / 想读 / 读完
-│   ├── 图书：搜索 / 条码扫描 / 手动录入（书名、作者、总页数、封面）
+│   ├── 图书：搜索 / 条码扫描 / 手动录入（书名、作者、出版社、简介、总页数、封面）
+│   ├── 书籍详情：阅读进度/状态/评分，支持编辑书名、作者、页数、当前页、状态、读完日期、配色与简介
 │   └── 读完归档：评分、完成日期、总结
 ├── 4 打卡流程（核心）
 │   ├── 计时结束 or 手动提交 → 打卡确认
@@ -125,7 +126,8 @@ User(id, owner_id, nickname, signature, avatar_cls[a1..a4], level, exp, joined_a
      streak_current, streak_best, make_up_cards, year_goal_books,
      reminder_time, privacy_mode)
 
-Book(id, isbn, title, author, cover_url, total_pages, source[scan/search/manual])
+Book(id, isbn, title, author, publisher, description, cover_cls,
+     total_pages, source[scan/search/manual])
 
 UserBook(id, user_id, book_id, status[READING/WISH/DONE],
          current_page, started_at, finished_at, rating)
@@ -175,6 +177,7 @@ RoomCheckIn(id, room_id, owner_id, member_name, date, minutes, note, created_at)
 |---|---|---|
 | 认证 | `POST /auth/wx-login` | 微信/手机号登录，JWT |
 | 书架 | `GET/POST /books`、`POST /books/scan` | 列表 / 新增 / 条码识别 |
+| 书架 | `getBook(id)` / `updateBook(id, patch)` / `deleteBook(id)` | 详情读取 / 编辑保存 / 移除（RLS 仅本人） |
 | 书架 | `PATCH /user-books/{id}` | 更新进度 / 状态 / 评分 |
 | 打卡 | `POST /checkins` | 提交打卡（幂等：同日同书覆盖累计） |
 | 打卡 | `POST /checkins/timer/start·pause·stop` | 计时会话 |

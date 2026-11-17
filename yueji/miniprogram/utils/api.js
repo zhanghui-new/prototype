@@ -547,6 +547,29 @@ async function addBook(book) {
   return { data: res.data, error: res.error || null };
 }
 
+// 书籍详情：只读自己的书（RLS 保证），找不到返回 data=null
+async function getBook(id) {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录' }, needLogin: true };
+  const r = await booksTable.listBy('id', Number(id));
+  if (r.error) return { data: null, error: r.error };
+  return { data: (r.data || [])[0] || null, error: null };
+}
+
+async function updateBook(id, patch) {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录' }, needLogin: true };
+  const res = await booksTable.update(Number(id), patch);
+  return { data: res.data, error: res.error || null };
+}
+
+async function deleteBook(id) {
+  const { session } = await currentSession();
+  if (!session) return { data: null, error: { message: '请先登录' }, needLogin: true };
+  const res = await booksTable.remove(Number(id));
+  return { data: res.data, error: res.error || null };
+}
+
 // ---------------- 社区动态 ----------------
 async function getFeed() {
   const { session } = await currentSession();
@@ -939,7 +962,7 @@ module.exports = {
   // 打卡
   createCheckin, flushPendingCheckins,
   // 书架
-  listBooks, addBook,
+  listBooks, addBook, getBook, updateBook, deleteBook,
   // 社区
   getFeed, publishFeed, toggleFeedLike, deleteFeed, addComment, deleteComment,
   // 我的 / 榜单
