@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>仓库 / 单位 / 货物对照表 · 95306 货运业务原型</title>
+  <style>
+    :root {
+      --bg: #f3f6fa;
+      --card: #ffffff;
+      --text: #1f2a37;
+      --sub: #5b6573;
+      --muted: #8a94a6;
+      --line: #e7edf4;
+      --primary: #2563eb;
+      --primary-soft: #eff4ff;
+      --amber: #d97706;
+      --amber-soft: #fdf3e3;
+      --green: #059669;
+      --green-soft: #e8f7f1;
+      --violet: #7c3aed;
+      --violet-soft: #f2eefe;
+      --red: #dc2626;
+      --red-soft: #fdeeee;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.05);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(820px 380px at 6% -8%, rgba(37, 99, 235, 0.10), transparent 62%),
+        radial-gradient(680px 340px at 100% 2%, rgba(245, 158, 11, 0.09), transparent 58%),
+        linear-gradient(180deg, #eef3f9, var(--bg) 46%, #eef2f8);
+      -webkit-font-smoothing: antialiased;
+    }
+    .shell { max-width: 1240px; margin: 0 auto; padding: 40px 24px 56px; }
+
+    .back {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-bottom: 22px; color: var(--sub); font-size: 13px; text-decoration: none;
+    }
+    .back:hover { color: var(--primary); }
+
+    .head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px;
+      border-radius: 999px; background: var(--primary-soft); color: var(--primary);
+      font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+    }
+    .eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); display: inline-block; }
+    h1 { margin: 12px 0 8px; font-size: 26px; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; }
+    .lead { margin: 0; max-width: 660px; color: var(--sub); font-size: 13px; line-height: 1.75; }
+    .lead code {
+      font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      font-size: 12px; background: #eef2f8; border-radius: 5px; padding: 1px 5px; color: #475569;
+    }
+
+    /* 视图切换 */
+    .view-switch { display: inline-flex; background: #e8eef6; border-radius: 10px; padding: 3px; gap: 2px; }
+    .view-switch button {
+      border: 0; background: transparent; padding: 7px 16px; border-radius: 8px;
+      font-size: 13px; color: var(--sub); cursor: pointer; font-family: inherit; font-weight: 500;
+      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .view-switch button.active { background: #fff; color: var(--primary); font-weight: 600; box-shadow: 0 1px 3px rgba(16,24,40,0.10); }
+
+    /* 统计卡 */
+    .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 16px 18px;
+    }
+    .stat .num { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+    .stat .num small { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 3px; }
+    .stat .label { margin-top: 4px; font-size: 12px; color: var(--sub); }
+    .stat.warn .num { color: var(--amber); }
+    .stat.res .num { color: var(--violet); }
+
+    /* 筛选条 */
+    .filters {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 12px 14px; margin-bottom: 16px;
+    }
+    .filters select, .filters input {
+      height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px;
+      font-size: 13px; color: var(--text); background: #fbfcfe; font-family: inherit; outline: none;
+    }
+    .filters input { width: 240px; }
+    .filters select:focus, .filters input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+    .filters .spacer { flex: 1; }
+    .filters .reset {
+      height: 34px; padding: 0 14px; border: 0; border-radius: 8px; background: var(--primary-soft);
+      color: var(--primary); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .filters .reset:hover { background: #dfe9fd; }
+    .filters .count { font-size: 12px; color: var(--muted); }
+
+    /* 矩阵表格 */
+    .matrix-wrap {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); overflow: auto; max-height: 660px;
+    }
+    table.matrix { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1020px; }
+    .matrix th, .matrix td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); padding: 0; }
+    .matrix th:last-child, .matrix td:last-child { border-right: 0; }
+    .matrix thead th {
+      position: sticky; top: 0; z-index: 3; background: #f8fafd;
+      padding: 11px 12px; font-size: 12px; color: var(--sub); font-weight: 600;
+      text-align: left; white-space: nowrap;
+    }
+    .matrix thead th .zone { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); }
+    .matrix thead th .zone .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .matrix thead th.pending .zone .dot { background: var(--amber); }
+    .matrix thead th.out .zone .dot { background: var(--violet); }
+    .matrix thead th small { display: block; font-weight: 400; color: var(--muted); margin-top: 3px; }
+    .matrix .rowhead {
+      position: sticky; left: 0; z-index: 2; background: #f8fafd;
+      padding: 10px 14px; font-size: 13px; font-weight: 600; white-space: nowrap; min-width: 190px;
+    }
+    .matrix .rowhead small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; margin-top: 3px; }
+    .matrix .rowhead .unit-name { display: block; max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+    .matrix thead th.corner { position: sticky; left: 0; z-index: 4; min-width: 190px; }
+    .matrix td.cell { vertical-align: top; min-width: 196px; height: 72px; padding: 8px 10px; cursor: pointer; transition: background 0.12s ease; }
+    .matrix td.cell.has:hover { background: var(--primary-soft); }
+    .matrix td.cell.empty { cursor: default; color: #cbd5e1; text-align: center; vertical-align: middle; font-size: 14px; }
+    .chip {
+      display: inline-flex; align-items: baseline; gap: 5px; margin: 2px 5px 2px 0;
+      padding: 3px 9px; border-radius: 8px; font-size: 12px; line-height: 1.6;
+      border: 1px solid transparent; white-space: nowrap;
+    }
+    .chip b { font-weight: 600; }
+    .chip .qty { font-size: 12px; opacity: 0.88; font-variant-numeric: tabular-nums; }
+    .chip.cat-片碱 { background: #eef2ff; color: #3b4fd8; border-color: #dde3fb; }
+    .chip.cat-粒碱 { background: var(--green-soft); color: var(--green); border-color: #cdeee0; }
+    .chip.cat-工业盐 { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .chip.cat-食用盐 { background: #fff7ed; color: #b45309; border-color: #fde7cf; }
+    .chip.more { background: #f5f8fc; color: var(--muted); border-color: #e8eef6; }
+    .matrix td.cell.pending-cell { background: #fffcf5; }
+    .matrix td.cell.pending-cell:hover { background: #fdf6e8; }
+    .matrix td.cell.out-cell { background: #fbf9ff; }
+    .matrix td.cell.out-cell:hover { background: #f4efff; }
+
+    .matrix-hint { padding: 0 4px 8px; font-size: 12px; color: var(--muted); }
+    .matrix-hint b { color: var(--sub); font-weight: 600; }
+    .matrix-hint:empty { display: none; }
+
+    /* 列表视图 */
+    .list-wrap {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); overflow-x: auto; display: none;
+    }
+    table.list { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1000px; }
+    .list th, .list td { border-bottom: 1px solid var(--line); padding: 11px 14px; font-size: 13px; text-align: left; white-space: nowrap; }
+    .list thead th { position: sticky; top: 0; z-index: 2; background: #f8fafd; font-size: 12px; color: var(--sub); font-weight: 600; }
+    .list tbody tr:hover { background: #f8fafd; }
+    .list tbody tr.rowlink { cursor: pointer; }
+    .list-hint { padding: 11px 16px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); background: #fcfdff; }
+    .list tfoot td { background: #f8fafd; font-weight: 600; border-top: 1px solid var(--line); }
+    .list tfoot td:first-child { color: var(--sub); font-weight: 500; }
+    .list td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .list td.unit-cell { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+    .list td .mono, .rec-grid .mono { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: 12px; }
+    .cat-tag {
+      display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 12px;
+      background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+    }
+    .cat-tag.in { background: var(--primary-soft); color: var(--primary); border-color: #dbe6fd; }
+    .status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 2px 9px; border-radius: 999px; }
+    .status i { width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+    .status.ok  { background: var(--green-soft); color: var(--green); } .status.ok i { background: var(--green); }
+    .status.out { background: var(--amber-soft); color: var(--amber); } .status.out i { background: var(--amber); }
+    .status.res { background: var(--violet-soft); color: var(--violet); } .status.res i { background: var(--violet); }
+
+    /* 空态 */
+    .empty-state { padding: 64px 20px; text-align: center; color: var(--muted); font-size: 13px; }
+
+    /* 抽屉 */
+    .mask {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.34);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 40;
+    }
+    .mask.show { opacity: 1; pointer-events: auto; }
+    .drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; width: min(480px, 94vw);
+      background: #fff; box-shadow: -12px 0 40px rgba(16, 24, 40, 0.14);
+      transform: translateX(100%); transition: transform 0.22s ease; z-index: 41;
+      display: flex; flex-direction: column;
+    }
+    .drawer.show { transform: translateX(0); }
+    .drawer-head { position: relative; padding: 20px 22px 14px; border-bottom: 1px solid var(--line); }
+    .drawer-head h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; padding-right: 36px; }
+    .drawer-head .sub { font-size: 12px; color: var(--sub); line-height: 1.6; }
+    .drawer-close {
+      position: absolute; top: 16px; right: 16px; width: 30px; height: 30px;
+      border: 0; border-radius: 8px; background: #f1f5f9; color: var(--sub);
+      font-size: 15px; cursor: pointer; font-family: inherit;
+    }
+    .drawer-close:hover { background: #e2e8f0; color: var(--text); }
+    .drawer-body { flex: 1; overflow: auto; padding: 14px 22px 22px; }
+    .rec { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+    .rec-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .rec-top .gname { font-size: 13px; font-weight: 600; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+    .rec-top .gname em { font-style: normal; font-size: 11px; font-weight: 500; color: var(--muted); }
+    .rec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 12px; color: var(--sub); }
+    .rec-grid b { color: var(--text); font-weight: 600; }
+    .sec-title {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+      margin: 6px 0 10px; font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: 0.02em;
+    }
+    .sec-title:not(:first-child) { margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--line); }
+    .sec-title span { font-weight: 400; color: var(--muted); }
+    .drawer-foot {
+      padding: 12px 22px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted);
+      display: flex; justify-content: space-between; gap: 10px;
+    }
+
+    .foot {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+      margin-top: 36px; padding-top: 18px; border-top: 1px solid #e3eaf3; color: var(--muted); font-size: 12px;
+    }
+
+    @media (max-width: 860px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .filters input { width: 100%; }
+      h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <a class="back" href="./">← 返回 95306 货运业务</a>
+    <header class="head">
+      <div>
+        <span class="eyebrow"><i></i>95306 货运业务 · 库存查询</span>
+        <h1>仓库 / 单位 / 货物对照表</h1>
+        <p class="lead">按「货主单位 × 库区」交叉展示谁在哪个库区还有货，库区覆盖 <code>危1/2/3/13/14库</code>、<code>危6-1/6-2库</code>、<code>5道盐棚</code>、<code>6道盐棚</code> 与 <code>待卸</code>、<code>待出</code>。单元格为 <code>品名 · 品牌 + 剩余吨位</code>，行列汇总也按剩余吨位计；列表视图按 <code>库区 / 单位 / 品牌 / 品名</code> 汇总。点击矩阵单元格或列表任意一行，可查看该组出入库记录。数据为演示示例。</p>
+      </div>
+      <div class="view-switch" role="tablist" aria-label="视图切换">
+        <button id="btnMatrix" class="active" type="button">矩阵视图</button>
+        <button id="btnList" type="button">列表视图</button>
+      </div>
+    </header>
+
+    <section class="stats" id="stats"></section>
+
+    <section class="filters">
+      <select id="fZone" aria-label="按库区筛选"><option value="">全部库区</option></select>
+      <select id="fBrand" aria-label="按品牌筛选"><option value="">全部品牌</option></select>
+      <select id="fGoods" aria-label="按品名筛选"><option value="">全部品名</option></select>
+      <input id="fKeyword" type="search" placeholder="搜索单位 / 车号…" aria-label="关键字搜索" />
+      <span class="spacer"></span>
+      <span class="count" id="countText"></span>
+      <button class="reset" id="btnReset" type="button">重置</button>
+    </section>
+
+    <div class="matrix-hint" id="matrixHint"></div>
+    <section class="matrix-wrap" id="matrixWrap"></section>
+    <section class="list-wrap" id="listWrap"></section>
+
+    <footer class="foot">
+      <span>静态原型 · 数据为演示示例，无后端依赖</span>
+      <span id="updateTime"></span>
+    </footer>
+  </main>
+
+  <div class="mask" id="mask"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <h3 id="dTitle"></h3>
+      <div class="sub" id="dSub"></div>
+      <button class="drawer-close" id="dClose" type="button" aria-label="关闭">✕</button>
+    </div>
+    <div class="drawer-body" id="dBody"></div>
+    <div class="drawer-foot"><span id="dCount"></span><span id="dTotal"></span></div>
+  </aside>
+
+  <script>
+    // ---------- 演示数据 ----------
+    // 库区清单与业务系统一致：7 个危险品库 + 2 个盐棚 + 待卸 / 待出 两个过渡库区
+    // kind: store = 实体在库（计入在库吨位）、pending = 待卸（车已到达未分配货位）、out = 待出（已配货待装车）
+    var ZONES = [
+      { name: "危1库",    kind: "store"   },
+      { name: "危2库",    kind: "store"   },
+      { name: "危3库",    kind: "store"   },
+      { name: "危13库",   kind: "store"   },
+      { name: "危14库",   kind: "store"   },
+      { name: "危6-1库",  kind: "store"   },
+      { name: "危6-2库",  kind: "store"   },
+      { name: "5道盐棚",  kind: "store"   },
+      { name: "6道盐棚",  kind: "store"   },
+      { name: "待卸",     kind: "pending" },
+      { name: "待出",     kind: "out"     }
+    ];
+    var UNITS = [
+      "赣州康大化工有限公司",
+      "新余市川美化工有限公司",
+      "定南和瑞工贸有限公司",
+      "湖南长沙合丰化工有限公司",
+      "江西鹰潭盛远物资有限公司",
+      "广东韶关宏泰化工有限公司",
+      "江西晶昊盐化有限公司",
+      "樟树市盐业有限公司",
+      "赣州虔盐商贸有限公司"
+    ];
+    // [类别, 品名, 单位, 品牌, 日期, 车号, 入库吨位, 库区, 剩余吨位]
+    var RECORDS = [
+      ["整车（到达）","片碱","赣州康大化工有限公司","金昱元","2026-11-17","3837604",69,"危6-2库",51],
+      ["整车（到达）","片碱","赣州康大化工有限公司","金昱元","2026-11-17","3426483",57,"危6-2库",57],
+      ["整车（到达）","片碱","赣州康大化工有限公司","青海宜化","2026-11-16","库存",246,"危6-1库",186],
+      ["整车（到达）","片碱","赣州康大化工有限公司","新疆宜化","2026-11-14","3518820",61.5,"危6-1库",61.5],
+      ["整车（到达）","片碱","赣州康大化工有限公司","金昱元","2026-11-15","3425909",57,"危1库",57],
+      ["整车（到达）","片碱","赣州康大化工有限公司","金昱元","2026-11-15","3501893",57,"危1库",39],
+      ["整车（到达）","片碱","赣州康大化工有限公司","金昱元","2026-11-18","3511022",57,"待卸",57],
+      ["整车（到达）","片碱","赣州康大化工有限公司","金昱元","2026-11-18","3511023",57,"待卸",57],
+      ["整车（到达）","片碱","赣州康大化工有限公司","金昱元","2026-11-17","3429901",58,"待出",58],
+
+      ["整车（到达）","片碱","新余市川美化工有限公司","中泰化学","2026-11-15","3841027",68.2,"危2库",68.2],
+      ["整车（到达）","片碱","新余市川美化工有限公司","金昱元","2026-11-17","3501266",56.975,"危2库",40.975],
+      ["整车（到达）","片碱","新余市川美化工有限公司","金昱元","2026-11-16","3428114",58.4,"危1库",44.4],
+      ["整车（到达）","粒碱","新余市川美化工有限公司","新疆宜化","2026-11-16","3429930",59.2,"危1库",59.2],
+      ["整车（到达）","片碱","新余市川美化工有限公司","中泰化学","2026-11-18","3502761",62,"待卸",62],
+
+      ["整车（到达）","片碱","定南和瑞工贸有限公司","青海宜化","2026-11-16","库存",254,"危3库",198],
+      ["整车（到达）","片碱","定南和瑞工贸有限公司","陕西北元","2026-11-13","3418207",59.6,"危6-2库",34.6],
+      ["整车（到达）","片碱","定南和瑞工贸有限公司","陕西北元","2026-11-14","3421776",58,"危13库",58],
+      ["整车（到达）","片碱","定南和瑞工贸有限公司","青海宜化","2026-11-18","3835491",66,"待卸",66],
+
+      ["整车（到达）","片碱","湖南长沙合丰化工有限公司","新疆宜化","2026-11-15","3828429",69.5,"危6-2库",69.5],
+      ["整车（到达）","片碱","湖南长沙合丰化工有限公司","新疆宜化","2026-11-15","3432171",57.5,"危6-2库",57.5],
+      ["整车（到达）","片碱","湖南长沙合丰化工有限公司","中泰化学","2026-11-17","3517490",64.8,"危6-1库",50.8],
+      ["整车（到达）","片碱","湖南长沙合丰化工有限公司","新疆宜化","2026-11-16","3830011",70.1,"危13库",70.1],
+      ["整车（到达）","片碱","湖南长沙合丰化工有限公司","新疆宜化","2026-11-18","3839277",70.1,"待卸",70.1],
+      ["整车（到达）","片碱","湖南长沙合丰化工有限公司","新疆宜化","2026-11-17","3427755",57.5,"待出",57.5],
+
+      ["整车（到达）","片碱","江西鹰潭盛远物资有限公司","陕西北元","2026-11-14","3426138",55.8,"危14库",55.8],
+      ["整车（到达）","片碱","江西鹰潭盛远物资有限公司","陕西北元","2026-11-14","3509124",58.2,"危14库",58.2],
+      ["整车（到达）","片碱","江西鹰潭盛远物资有限公司","青海宜化","2026-11-12","库存",188,"危6-2库",120],
+      ["整车（到达）","片碱","江西鹰潭盛远物资有限公司","金昱元","2026-11-16","3510099",60,"危3库",60],
+      ["整车（到达）","片碱","江西鹰潭盛远物资有限公司","金昱元","2026-11-18","3516033",63.4,"待卸",63.4],
+
+      ["整车（到达）","片碱","广东韶关宏泰化工有限公司","中泰化学","2026-11-16","3847751",67.3,"危14库",67.3],
+      ["整车（到达）","片碱","广东韶关宏泰化工有限公司","新疆宜化","2026-11-13","3435028",60.9,"危14库",42.9],
+      ["整车（到达）","片碱","广东韶关宏泰化工有限公司","陕西北元","2026-11-17","3832019",65.5,"危6-2库",65.5],
+      ["整车（到达）","粒碱","广东韶关宏泰化工有限公司","中泰化学","2026-11-12","库存",120,"危6-2库",90],
+      ["整车（到达）","片碱","广东韶关宏泰化工有限公司","中泰化学","2026-11-15","3845502",66.6,"危13库",66.6],
+      ["整车（到达）","片碱","广东韶关宏泰化工有限公司","陕西北元","2026-11-18","3503842",58.7,"待卸",58.7],
+
+      ["整车（到达）","工业盐","江西晶昊盐化有限公司","晶昊","2026-11-10","库存",320,"5道盐棚",260],
+      ["整车（到达）","工业盐","江西晶昊盐化有限公司","晶昊","2026-11-16","3412001",58.4,"5道盐棚",58.4],
+      ["整车（到达）","食用盐","江西晶昊盐化有限公司","晶昊","2026-11-14","3415566",45.6,"6道盐棚",45.6],
+      ["整车（到达）","工业盐","江西晶昊盐化有限公司","晶昊","2026-11-18","3418820",60.2,"待卸",60.2],
+      ["整车（到达）","工业盐","江西晶昊盐化有限公司","晶昊","2026-11-17","3417733",58,"待出",58],
+
+      ["整车（到达）","工业盐","樟树市盐业有限公司","樟树岩盐","2026-11-11","库存",180,"6道盐棚",96],
+      ["整车（到达）","工业盐","樟树市盐业有限公司","樟树岩盐","2026-11-15","3413399",56.8,"5道盐棚",56.8],
+      ["整车（到达）","工业盐","樟树市盐业有限公司","樟树岩盐","2026-11-18","3419002",57.5,"待卸",57.5],
+      ["整车（到达）","工业盐","樟树市盐业有限公司","樟树岩盐","2026-11-17","3413311",56.8,"待出",56.8],
+
+      ["整车（到达）","食用盐","赣州虔盐商贸有限公司","中盐","2026-11-13","3412288",42.5,"5道盐棚",30.5],
+      ["整车（到达）","工业盐","赣州虔盐商贸有限公司","虔盐","2026-11-15","3414477",52.4,"6道盐棚",52.4],
+      ["整车（到达）","食用盐","赣州虔盐商贸有限公司","中盐","2026-11-18","3419911",41.8,"待卸",41.8]
+    ];
+
+    // ---------- 状态 ----------
+    var state = { zone: "", brand: "", goods: "", keyword: "", view: "matrix" };
+
+    var $ = function (id) { return document.getElementById(id); };
+    var fmt = function (n) {
+      return (Math.round(n * 1000) / 1000).toLocaleString("zh-CN", { maximumFractionDigits: 3 });
+    };
+    var esc = function (s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    };
+    // 列表/矩阵里去掉「有限公司」后缀，避免长名撑破表格；title 里保留全称
+    var shortUnit = function (n) {
+      return n.replace(/有限(责任)?公司$/, "").replace(/股份有限公司$/, "");
+    };
+
+    // ---------- 筛选 ----------
+    function filtered() {
+      var kw = state.keyword.trim().toLowerCase();
+      return RECORDS.filter(function (r) {
+        if (state.zone && r[7] !== state.zone) return false;
+        if (state.brand && r[3] !== state.brand) return false;
+        if (state.goods && r[1] !== state.goods) return false;
+        if (kw && r[2].toLowerCase().indexOf(kw) < 0 && r[5].toLowerCase().indexOf(kw) < 0) return false;
+        return true;
+      });
+    }
+
+    // ---------- 统计 ----------
+    function zoneKind(name) {
+      for (var i = 0; i < ZONES.length; i++) if (ZONES[i].name === name) return ZONES[i].kind;
+      return "store";
+    }
+    function renderStats(recs) {
+      var zoneSet = {}, unitSet = {}, brandSet = {}, stock = 0, pending = 0, outbound = 0;
+      recs.forEach(function (r) {
+        zoneSet[r[7]] = 1; unitSet[r[2]] = 1; brandSet[r[3]] = 1;
+        var k = zoneKind(r[7]);
+        if (k === "pending") pending += r[8];
+        else if (k === "out") outbound += r[8];
+        else stock += r[8];
+      });
+      $("stats").innerHTML =
+        '<div class="stat"><div class="num">' + fmt(stock) + '<small>吨</small></div><div class="label">在库剩余吨位（实体库区）</div></div>' +
+        '<div class="stat warn"><div class="num">' + fmt(pending) + '<small>吨</small></div><div class="label">待卸吨位（未分配货位）</div></div>' +
+        '<div class="stat res"><div class="num">' + fmt(outbound) + '<small>吨</small></div><div class="label">待出吨位（已配货待装车）</div></div>' +
+        '<div class="stat"><div class="num">' + Object.keys(unitSet).length + '<small>家</small></div><div class="label">货主单位 / ' + Object.keys(brandSet).length + ' 个品牌</div></div>' +
+        '<div class="stat"><div class="num">' + Object.keys(zoneSet).length + '<small>个</small></div><div class="label">涉及库区 / 共 ' + ZONES.length + ' 个</div></div>';
+    }
+
+    // ---------- 矩阵视图：单位 × 库区 ----------
+    function renderMatrix(recs) {
+      var zoneSet = {}, unitSet = {};
+      recs.forEach(function (r) { zoneSet[r[7]] = 1; unitSet[r[2]] = 1; });
+      var zones = ZONES.filter(function (z) { return zoneSet[z.name]; });
+      var units = UNITS.filter(function (u) { return unitSet[u]; });
+
+      if (!zones.length || !units.length) {
+        $("matrixWrap").innerHTML = '<div class="empty-state">没有符合条件的库存记录，试试调整筛选条件。</div>';
+        $("matrixHint").innerHTML = "";
+        $("countText").textContent = "0 条记录";
+        return;
+      }
+
+      // unit||zone -> { 品名||品牌 : {goods, brand, tons} }
+      var map = {};
+      recs.forEach(function (r) {
+        var key = r[2] + "||" + r[7];
+        var gk = r[1] + "||" + r[3];
+        var bucket = map[key] || (map[key] = {});
+        var item = bucket[gk] || (bucket[gk] = { goods: r[1], brand: r[3], tons: 0 });
+        item.tons += r[8];
+      });
+
+      var html = '<table class="matrix"><thead><tr><th class="corner">货主单位 \\ 库区</th>';
+      zones.forEach(function (z) {
+        var tons = 0;
+        units.forEach(function (u) {
+          var bucket = map[u + "||" + z.name] || {};
+          Object.keys(bucket).forEach(function (k) { tons += bucket[k].tons; });
+        });
+        html += '<th class="' + (z.kind === "store" ? "" : z.kind) + '"><span class="zone"><span class="dot"></span>' +
+                esc(z.name) + "</span><small>剩余 " + fmt(tons) + " 吨</small></th>";
+      });
+      html += "</tr></thead><tbody>";
+
+      units.forEach(function (u) {
+        var uTons = 0, uPending = 0;
+        zones.forEach(function (z) {
+          var bucket = map[u + "||" + z.name] || {};
+          Object.keys(bucket).forEach(function (k) {
+            uTons += bucket[k].tons;
+            if (z.kind === "pending") uPending += bucket[k].tons;
+          });
+        });
+        html += '<tr><th class="rowhead" scope="row" title="' + esc(u) + '">' +
+                '<span class="unit-name">' + esc(shortUnit(u)) + "</span>" +
+                "<small>合计 " + fmt(uTons) + " 吨" +
+                (uPending ? " · 待卸 " + fmt(uPending) + " 吨" : "") + "</small></th>";
+
+        zones.forEach(function (z) {
+          var bucket = map[u + "||" + z.name] || {};
+          var keys = Object.keys(bucket);
+          if (!keys.length) { html += '<td class="cell empty">—</td>'; return; }
+          var cellCls = z.kind === "pending" ? " pending-cell" : (z.kind === "out" ? " out-cell" : "");
+          html += '<td class="cell has' + cellCls + '" data-unit="' + esc(u) +
+                  '" data-zone="' + esc(z.name) + '" title="点击查看出入库记录">';
+          keys.slice(0, 2).forEach(function (k) {
+            var it = bucket[k];
+            html += '<span class="chip cat-' + esc(it.goods) + '"><b>' + esc(it.goods) + "</b>" + esc(it.brand) +
+                    '<span class="qty">' + fmt(it.tons) + " 吨</span></span>";
+          });
+          if (keys.length > 2) html += '<span class="chip more">+' + (keys.length - 2) + "</span>";
+          html += "</td>";
+        });
+        html += "</tr>";
+      });
+      html += "</tbody></table>";
+      $("matrixWrap").innerHTML = html;
+      $("matrixHint").innerHTML = "表格可左右滑动，" +
+        (zones.length === ZONES.length
+          ? "共 <b>" + ZONES.length + "</b> 个库区"
+          : "当前筛选出 <b>" + zones.length + "</b> 个库区（共 " + ZONES.length + " 个）") +
+        "；点击有货单元格查看该组的出入库记录。";
+      $("countText").textContent = recs.length + " 条记录 · " + units.length + " 家单位 × " + zones.length + " 个库区";
+
+      Array.prototype.forEach.call($("matrixWrap").querySelectorAll("td.cell.has"), function (td) {
+        td.addEventListener("click", function () {
+          openDrawer(td.getAttribute("data-unit"), td.getAttribute("data-zone"));
+        });
+      });
+    }
+
+    // ---------- 列表视图：按 库区 / 单位 / 品牌 / 品名 汇总 ----------
+    function renderList(recs) {
+      if (!recs.length) {
+        $("listWrap").innerHTML = '<div class="empty-state">没有符合条件的库存记录，试试调整筛选条件。</div>';
+        return;
+      }
+      var map = {}, order = [];
+      recs.forEach(function (r) {
+        var key = [r[7], r[2], r[3], r[1]].join("||");
+        var it = map[key];
+        if (!it) {
+          it = map[key] = { zone: r[7], unit: r[2], brand: r[3], goods: r[1], inTons: 0, restTons: 0, cars: 0 };
+          order.push(key);
+        }
+        it.inTons += r[6];
+        it.restTons += r[8];
+        it.cars += 1;
+      });
+      var rows = order.map(function (k) { return map[k]; });
+      var zoneIdx = function (z) {
+        for (var i = 0; i < ZONES.length; i++) if (ZONES[i].name === z) return i;
+        return 99;
+      };
+      rows.sort(function (a, b) {
+        if (zoneIdx(a.zone) !== zoneIdx(b.zone)) return zoneIdx(a.zone) - zoneIdx(b.zone);
+        var ai = UNITS.indexOf(a.unit), bi = UNITS.indexOf(b.unit);
+        if (ai !== bi) return ai - bi;
+        return b.restTons - a.restTons;
+      });
+
+      var totalIn = 0, totalRest = 0;
+      var html = '<div class="list-hint">点击任意一行，查看该组的出入库记录</div>' +
+        '<table class="list"><thead><tr>' +
+        "<th>库区</th><th>单位</th><th>品牌</th><th>品名</th>" +
+        '<th style="text-align:right">入库吨位(吨)</th><th style="text-align:right">剩余吨位(吨)</th>' +
+        "</tr></thead><tbody>";
+      rows.forEach(function (it) {
+        totalIn += it.inTons;
+        totalRest += it.restTons;
+        var k = zoneKind(it.zone);
+        var st = k === "pending" ? "out" : (k === "out" ? "res" : "ok");
+        html += '<tr class="rowlink" data-unit="' + esc(it.unit) + '" data-zone="' + esc(it.zone) +
+          '" data-brand="' + esc(it.brand) + '" data-goods="' + esc(it.goods) + '" title="点击查看出入库记录">' +
+          '<td><span class="status ' + st + '"><i></i>' + esc(it.zone) + "</span></td>" +
+          '<td class="unit-cell" title="' + esc(it.unit) + '">' + esc(shortUnit(it.unit)) + "</td>" +
+          "<td>" + esc(it.brand) + "</td>" +
+          "<td><b>" + esc(it.goods) + "</b></td>" +
+          '<td class="num">' + fmt(it.inTons) + "</td>" +
+          '<td class="num"><b>' + fmt(it.restTons) + "</b></td>" +
+          "</tr>";
+      });
+      html += '</tbody><tfoot><tr><td colspan="4">合计 ' + rows.length + " 组</td>" +
+        '<td class="num">' + fmt(totalIn) + "</td>" +
+        '<td class="num">' + fmt(totalRest) + "</td></tr></tfoot></table>";
+      $("listWrap").innerHTML = html;
+
+      Array.prototype.forEach.call($("listWrap").querySelectorAll("tr.rowlink"), function (tr) {
+        tr.addEventListener("click", function () {
+          openDrawer(tr.getAttribute("data-unit"), tr.getAttribute("data-zone"),
+                     tr.getAttribute("data-goods"), tr.getAttribute("data-brand"));
+        });
+      });
+    }
+
+    // ---------- 出入库记录抽屉 ----------
+    function addDays(dateStr, n) {
+      var p = dateStr.split("-");
+      var d = new Date(+p[0], +p[1] - 1, +p[2] + n);
+      return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+    }
+    // 剩余与入库的差额即已出库量，按车生成一笔出库流水（演示数据）
+    function outflowOf(r) {
+      var diff = Math.round((r[6] - r[8]) * 1000) / 1000;
+      if (diff <= 0) return null;
+      var last = r[5] === "库存" ? 1 : (parseInt(r[5].slice(-1), 10) || 0);
+      return {
+        no: "CK" + (r[5] === "库存" ? "2601" : r[5].slice(-4)),
+        date: addDays(r[4], 1 + (last % 2)),
+        tons: diff,
+        car: r[5]
+      };
+    }
+
+    function openDrawer(unit, zone, goods, brand) {
+      var kw = state.keyword.trim().toLowerCase();
+      var list = RECORDS.filter(function (r) {
+        if (r[2] !== unit || r[7] !== zone) return false;
+        if (goods && r[1] !== goods) return false;
+        if (brand && r[3] !== brand) return false;
+        if (state.brand && r[3] !== state.brand) return false;
+        if (state.goods && r[1] !== state.goods) return false;
+        if (kw && r[5].toLowerCase().indexOf(kw) < 0) return false;
+        return true;
+      });
+
+      var zk = zoneKind(zone);
+      var zoneNote = zk === "pending" ? "（货车已到达，尚未分配货位）"
+                   : zk === "out"     ? "（已配货，等待装车出库）" : "";
+      $("dTitle").textContent = shortUnit(unit) + " · " + zone + (goods ? " · " + brand + " " + goods : "");
+      $("dSub").textContent = "出入库记录" + zoneNote;
+
+      var inHtml = "", outHtml = "", inTotal = 0, restTotal = 0, outTotal = 0, outCount = 0;
+      list.forEach(function (r) {
+        inTotal += r[6];
+        restTotal += r[8];
+        var st = zoneKind(r[7]) === "pending" ? "out" : (zoneKind(r[7]) === "out" ? "res" : "ok");
+        inHtml += '<div class="rec"><div class="rec-top">' +
+          '<span class="gname">' + esc(r[1]) + " · " + esc(r[3]) + "<em>入库</em></span>" +
+          '<span class="status ' + st + '"><i></i>' + esc(r[7]) + "</span></div>" +
+          '<div class="rec-grid">' +
+          "<span>日期：<b>" + esc(r[4]) + "</b></span>" +
+          '<span>车号：<b class="mono">' + esc(r[5]) + "</b></span>" +
+          "<span>入库吨位：<b>" + fmt(r[6]) + " 吨</b></span>" +
+          "<span>剩余吨位：<b>" + fmt(r[8]) + " 吨</b></span>" +
+          "</div></div>";
+
+        var o = outflowOf(r);
+        if (o) {
+          outTotal += o.tons;
+          outCount++;
+          outHtml += '<div class="rec"><div class="rec-top">' +
+            '<span class="gname">' + esc(r[1]) + " · " + esc(r[3]) + "<em>出库 · 汽车自提</em></span>" +
+            '<span class="status ok"><i></i>已出库</span></div>' +
+            '<div class="rec-grid">' +
+            "<span>提货单：<b class=\"mono\">" + esc(o.no) + "</b></span>" +
+            "<span>日期：<b>" + esc(o.date) + "</b></span>" +
+            "<span>出库吨位：<b>" + fmt(o.tons) + " 吨</b></span>" +
+            '<span>关联车号：<b class="mono">' + esc(o.car) + "</b></span>" +
+            "</div></div>";
+        }
+      });
+
+      $("dBody").innerHTML =
+        '<div class="sec-title">入库记录<span>' + list.length + " 车 · " + fmt(inTotal) + " 吨</span></div>" +
+        (inHtml || '<div class="empty-state">当前筛选条件下无入库记录。</div>') +
+        '<div class="sec-title">出库记录<span>' + outCount + " 笔 · " + fmt(outTotal) + " 吨</span></div>" +
+        (outHtml || '<div class="empty-state">暂无出库，货物仍在库。</div>');
+
+      $("dCount").textContent = "剩余 " + fmt(restTotal) + " 吨";
+      $("dTotal").textContent = "入库 " + fmt(inTotal) + " · 出库 " + fmt(outTotal) + " 吨";
+      $("mask").classList.add("show");
+      $("drawer").classList.add("show");
+      $("drawer").setAttribute("aria-hidden", "false");
+    }
+    function closeDrawer() {
+      $("mask").classList.remove("show");
+      $("drawer").classList.remove("show");
+      $("drawer").setAttribute("aria-hidden", "true");
+    }
+
+    function render() {
+      var recs = filtered();
+      renderStats(recs);
+      renderMatrix(recs);
+      renderList(recs);
+    }
+
+    // ---------- 初始化 ----------
+    (function init() {
+      ZONES.forEach(function (z) {
+        var o = document.createElement("option");
+        o.value = z.name; o.textContent = z.name;
+        $("fZone").appendChild(o);
+      });
+      var brands = {}, goods = {};
+      RECORDS.forEach(function (r) { brands[r[3]] = 1; goods[r[1]] = 1; });
+      Object.keys(brands).forEach(function (b) {
+        var o = document.createElement("option"); o.value = b; o.textContent = b;
+        $("fBrand").appendChild(o);
+      });
+      Object.keys(goods).forEach(function (g) {
+        var o = document.createElement("option"); o.value = g; o.textContent = g;
+        $("fGoods").appendChild(o);
+      });
+
+      $("fZone").addEventListener("change", function (e) { state.zone = e.target.value; render(); });
+      $("fBrand").addEventListener("change", function (e) { state.brand = e.target.value; render(); });
+      $("fGoods").addEventListener("change", function (e) { state.goods = e.target.value; render(); });
+      $("fKeyword").addEventListener("input", function (e) { state.keyword = e.target.value; render(); });
+      $("btnReset").addEventListener("click", function () {
+        state.zone = state.brand = state.goods = state.keyword = "";
+        $("fZone").value = $("fBrand").value = $("fGoods").value = "";
+        $("fKeyword").value = "";
+        render();
+      });
+
+      $("btnMatrix").addEventListener("click", function () { switchView("matrix"); });
+      $("btnList").addEventListener("click", function () { switchView("list"); });
+      function switchView(v) {
+        state.view = v;
+        $("btnMatrix").classList.toggle("active", v === "matrix");
+        $("btnList").classList.toggle("active", v === "list");
+        $("matrixWrap").style.display = v === "matrix" ? "" : "none";
+        $("matrixHint").style.display = v === "matrix" ? "" : "none";
+        $("listWrap").style.display = v === "list" ? "block" : "none";
+      }
+
+      $("dClose").addEventListener("click", closeDrawer);
+      $("mask").addEventListener("click", closeDrawer);
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDrawer(); });
+
+      $("updateTime").textContent = "数据更新时间：2026-11-18 08:00（示例）";
+      render();
+    })();
+  </script>
+</body>
+</html>

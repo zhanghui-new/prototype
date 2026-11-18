@@ -10,12 +10,10 @@
 | 95306 项目入口 | `95306/index.html` | [/95306/](https://zhanghui-new.github.io/prototype/95306/) |
 | 发送 / 到达 / 股道现车 | `95306/ec95306-prototype.html` | [/95306/ec95306-prototype.html](https://zhanghui-new.github.io/prototype/95306/ec95306-prototype.html) |
 | 使用统计 | `95306/usage-stats.html` | [/95306/usage-stats.html](https://zhanghui-new.github.io/prototype/95306/usage-stats.html) |
+| 仓库/单位/货物对照表 | `95306/inventory-matrix.html` | [/95306/inventory-matrix.html](https://zhanghui-new.github.io/prototype/95306/inventory-matrix.html) |
 | 阅迹项目入口 | `yueji/index.html` | [/yueji/](https://zhanghui-new.github.io/prototype/yueji/) |
 | 阅迹 H5 可交互 | `yueji/h5-interactive.html` | [/yueji/h5-interactive.html](https://zhanghui-new.github.io/prototype/yueji/h5-interactive.html) |
 | 阅迹高保真原型 | `yueji/high-fidelity.html` | [/yueji/high-fidelity.html](https://zhanghui-new.github.io/prototype/yueji/high-fidelity.html) |
-| 阅迹系统设计文档 | `yueji/design-doc.md` | [/yueji/design-doc.md](https://zhanghui-new.github.io/prototype/yueji/design-doc.md) |
-| 阅迹小程序源码 | `yueji/miniprogram/` | [/yueji/miniprogram/](https://zhanghui-new.github.io/prototype/yueji/miniprogram/) |
-| 圣诞主持稿入口 | `xmas-script/index.html` | [/xmas-script/](https://zhanghui-new.github.io/prototype/xmas-script/) |
 
 ---
 
@@ -36,15 +34,12 @@ prototype/                        ← 仓库根 = 线上根路径 /
 ├── 95306/                        ← 一个项目 = 一个文件夹
 │   ├── index.html                ← 项目自己的入口/小导航（必需）
 │   ├── ec95306-prototype.html
-│   └── usage-stats.html
+│   ├── usage-stats.html
+│   └── inventory-matrix.html
 ├── yueji/                        ← 另一个项目，同样结构
 │   ├── index.html
 │   ├── h5-interactive.html
-│   ├── high-fidelity.html
-│   ├── design-doc.md             ← 系统设计文档
-│   └── miniprogram/              ← 微信小程序源码存档
-├── xmas-script/                  ← 圣诞主持稿单文件 H5
-│   └── index.html
+│   └── high-fidelity.html
 ├── README.md                     ← 本文件
 └── .nojekyll                     ← 别删
 ```
