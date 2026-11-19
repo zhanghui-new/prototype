@@ -14,6 +14,7 @@
 | 阅迹项目入口 | `yueji/index.html` | [/yueji/](https://zhanghui-new.github.io/prototype/yueji/) |
 | 阅迹 H5 可交互 | `yueji/h5-interactive.html` | [/yueji/h5-interactive.html](https://zhanghui-new.github.io/prototype/yueji/h5-interactive.html) |
 | 阅迹高保真原型 | `yueji/high-fidelity.html` | [/yueji/high-fidelity.html](https://zhanghui-new.github.io/prototype/yueji/high-fidelity.html) |
+| 圣诞主持稿 | `xmas-script/index.html` | [/xmas-script/](https://zhanghui-new.github.io/prototype/xmas-script/) |
 
 ---
 
@@ -40,6 +41,9 @@ prototype/                        ← 仓库根 = 线上根路径 /
 │   ├── index.html
 │   ├── h5-interactive.html
 │   └── high-fidelity.html
+├── xmas-script/                  ← 圣诞主持稿（单页，index.html 即全部内容）
+│   ├── index.html
+│   └── README.md
 ├── README.md                     ← 本文件
 └── .nojekyll                     ← 别删
 ```
@@ -155,7 +159,7 @@ git push
 
 改大标题、副标题就动这三行。`<i></i>` 是那个小圆点，别删。
 
-### 2. 卡片区（第 190~216 行附近）
+### 2. 卡片区（第 190~229 行附近）
 
 ```html
 <section class="grid">
@@ -168,7 +172,7 @@ git push
 - **调顺序**：整段剪切粘贴，然后**重新编号** `idx`
 - **改文案**：只动 `<h2>` 和 `<p>` 里的文字
 
-### 3. 页脚（第 218~221 行附近）
+### 3. 页脚（第 231~234 行附近）
 
 ```html
 <footer class="foot">
